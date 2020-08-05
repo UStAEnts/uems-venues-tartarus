@@ -4,7 +4,10 @@
   "description": "Venues microservice for the UEMS system",
   "main": "build/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "run": "npm run build && node build/index.js",
+    "run:debug": "ts-node src/index.ts",
+    "build": "tsc --listEmittedFiles"
   },
   "repository": {
     "type": "git",
