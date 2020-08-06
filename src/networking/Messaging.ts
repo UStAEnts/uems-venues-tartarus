@@ -244,18 +244,23 @@ export class RabbitNetworkHandler {
         // Dispatch it out to the handlers and then wait for a reply
         switch (venue.msg_intention) {
             case 'CREATE':
+                __.debug('got a create message');
                 this._emitter.emit('create', venue, this.handleEventReply(venue));
                 break;
             case 'UPDATE':
+                __.debug('got an update message');
                 this._emitter.emit('update', venue, this.handleEventReply(venue));
                 break;
             case 'DELETE':
+                __.debug('got a delete message');
                 this._emitter.emit('delete', venue, this.handleEventReply(venue));
                 break;
             case 'READ':
+                __.debug('got a query message');
                 this._emitter.emit('query', venue, this.handleEventReply(venue));
                 break;
             default:
+                __.debug('got an unknown message');
                 this._emitter.emit('any', venue, this.handleEventReply(venue));
                 break;
         }
