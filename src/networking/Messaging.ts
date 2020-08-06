@@ -266,9 +266,18 @@ export class RabbitNetworkHandler {
      * gateway. This should be used to generate callbacks for handlers.
      * @param venue the initial venue message that needs to be handled by this callback
      */
-    private handleEventReply = (venue: VenueMessage) => ((response: VR.VenueResponseMessage): void => {
+    private handleEventReply = (venue: VenueMessage) => (
+        (response: VR.VenueResponseMessage | VR.VenueReadResponseMessage): void => {
+            __.info(`got a response to message ${venue.msg_id} of status ${response.status}`);
 
-    });
+            if (!this._responseChannel) {
+                __.error('got a response but the response channel is undefined?');
+                return;
+            }
+
+            this._responseChannel.publish(this._configuration.gateway, '', Buffer.from(JSON.stringify(response)));
+        }
+    );
 
     /**
      * Attaches an event listener to the underlying event emitter used by this network handler
