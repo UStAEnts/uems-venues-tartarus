@@ -3,7 +3,12 @@ import { createNanoEvents, Unsubscribe } from 'nanoevents';
 import * as z from 'zod';
 import { VenueMessage, VenueResponse } from '@uems/uemscommlib';
 import { has } from '@uems/uemscommlib/build/utilities/ObjectUtilities';
+import { VenueValidators } from '@uems/uemscommlib/build/venues/VenueValidators';
 import InternalVenue = VenueResponse.InternalVenue;
+import VenueRepresentation = VenueValidators.VenueRepresentation;
+import { _ml } from "../logging/Log";
+
+const __ = _ml(__filename);
 
 /**
  * Interface for all data sources designed to be used for manipulating venues
