@@ -2,19 +2,19 @@ import {
     VenueMessage as VM,
     VenueResponse as VR,
     VenueMessageValidator,
-    VenueResponseValidator
+    VenueResponseValidator, VenueResponse
 } from '@uems/uemscommlib';
-import { connect, Connection, ConsumeMessage, Options } from 'amqplib';
+import { Channel, connect, Connection, ConsumeMessage, Options } from 'amqplib';
 import { createNanoEvents, Unsubscribe } from 'nanoevents';
 import { _ml } from '../logging/Log';
 import * as z from 'zod';
 
 import VenueMessage = VM.VenueMessage;
-import VenueResponse = VR.VenueResponseMessage;
-import { Database, VenueDatabase } from "../database/Database";
+import VenueResponseMessage = VenueResponse.VenueResponseMessage;
+import VenueReadResponseMessage = VenueResponse.VenueReadResponseMessage;
 
 const __ = _ml(__filename);
-const _a = _ml(`${__filename}.amqp`);
+const _a = _ml(`${__filename} | amqp`);
 
 const OptionType: z.ZodType<Options.Connect> = z.any().optional();
 
