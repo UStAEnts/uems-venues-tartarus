@@ -304,7 +304,7 @@ export class RabbitNetworkHandler {
             unbind();
 
             // @ts-ignore
-            callback(...args);
+            void callback(...args);
         });
 
         return unbind;
