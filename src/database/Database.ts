@@ -197,8 +197,50 @@ export class Database implements VenueDatabase {
         return result;
     };
 
-    create(create: VenueMessage.CreateVenueMessage): Promise<string[]> | PromiseLike<string[]> {
-        return Promise.resolve([]);
+    async create(create: VenueMessage.CreateVenueMessage): Promise<string[]> {
+        if (!this._database) throw new Error('database was used before it was ready');
+
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        const { msg_intention, msg_id, status, ...document } = create;
+
+        const result = await this._database
+            .collection(this._configuration.collection)
+            .insertOne(document);
+
+        if (result.insertedCount === 1 && result.insertedId) {
+            return [(result.insertedId as ObjectId).toHexString()];
+        }
+
+        throw new Error('failed to insert');
+    }
+
+    async delete(del: VenueMessage.DeleteVenueMessage): Promise<string[]> {
+        if (!this._database) throw new Error('database was used before it was ready');
+
+        const { id } = del;
+        if (!ObjectId.isValid(id)) {
+            throw new Error('invalid object ID');
+        }
+
+        const objectID = ObjectId.createFromHexString(id);
+        const query = {
+            _id: objectID,
+        };
+
+        __.debug('executing delete query', {
+            query,
+        });
+
+        // TODO: validating the incoming ID
+        const result = await this._database
+            .collection(this._configuration.collection)
+            .deleteOne(query);
+
+        if (result.result.ok === 1 && result.deletedCount === 1) {
+            return [id];
+        }
+
+        throw new Error('failed to delete');
     }
 
     delete(del: VenueMessage.DeleteVenueMessage): Promise<string[]> | PromiseLike<string[]> {
