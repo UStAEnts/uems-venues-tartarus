@@ -58,6 +58,15 @@ const formatter = winston.format.printf(({ level, message, ...meta }) => {
 
     return result;
 });
+
+export const prettyFormat = winston.format.combine(
+    winston.format.colorize(),
+    winston.format.metadata(),
+    winston.format.timestamp(),
+    winston.format.label(),
+    formatter,
+);
+
 /**
  * Constructs a logger either at the info or debug level in the logs folder. If in a development environment, it will
  * add a transport to log to the console.
@@ -68,13 +77,7 @@ const logger = winston.createLogger({
         ...(useFile ? fileTransport : []),
         ...(environment === 'prod' ? [] : [
             new winston.transports.Console({
-                format: winston.format.combine(
-                    winston.format.colorize(),
-                    winston.format.metadata(),
-                    winston.format.timestamp(),
-                    winston.format.label(),
-                    formatter,
-                ),
+                format: prettyFormat,
                 level: 'silly',
             }),
         ]),
