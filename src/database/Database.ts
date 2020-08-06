@@ -243,9 +243,15 @@ export class Database implements VenueDatabase {
         throw new Error('failed to delete');
     }
 
-    delete(del: VenueMessage.DeleteVenueMessage): Promise<string[]> | PromiseLike<string[]> {
-        return Promise.resolve([]);
-    }
+    async update(update: VenueMessage.UpdateVenueMessage): Promise<string[]> {
+        if (!this._database) throw new Error('database was used before it was ready');
+
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        const { msg_intention, msg_id, status, id, ...document } = update;
+
+        if (!ObjectId.isValid(id)) {
+            throw new Error('invalid object ID');
+        }
 
     update(update: VenueMessage.UpdateVenueMessage): Promise<string[]> | PromiseLike<string[]> {
         return Promise.resolve([]);
