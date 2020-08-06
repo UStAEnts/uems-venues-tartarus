@@ -4,8 +4,10 @@ import * as z from 'zod';
 import { _ml } from './logging/Log';
 import { MessagingConfigurationSchema, RabbitNetworkHandler } from './networking/Messaging';
 import { Database, MongoDBConfigurationSchema } from './database/Database';
+import bind from './binding/VenueDatabaseBinding';
 
 const __ = _ml(__filename);
+const _b = _ml(`${__filename} | bind`);
 
 __.info('starting tartarus...');
 
@@ -77,6 +79,15 @@ fs.readFile(path.join(__dirname, '..', 'config', 'configuration.json'), { encodi
         });
     })))
     .then(() => {
+        if (!messager || !database) {
+            __.error('reached an uninitialised database or messenger, this should not be possible');
+            throw new Error('uninitialised database or messenger');
+        }
+
+        __.info('binding database to messenger');
+
+        bind(database, messager);
+
         // We're ready to start!
         __.info('tartarus up and running');
     })
