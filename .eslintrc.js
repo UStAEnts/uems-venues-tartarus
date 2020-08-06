@@ -24,6 +24,7 @@ module.exports = {
             'ImportDeclaration': 'never',
         }],
         'linebreak-style': 'off',
+        'no-void': 'off',
 
         'no-unused-vars': 'off',
         'no-restricted-syntax': 'off',

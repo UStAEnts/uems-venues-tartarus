@@ -30,7 +30,7 @@ const fileTransport = [new winston.transports.File({
 })];
 
 const formatter = winston.format.printf(({ level, message, ...meta }) => {
-    const timestamp = has(meta, 'timestamp') ? meta['timestamp'] as string : new Date().toISOString();
+    const timestamp = has(meta, 'timestamp') ? meta.timestamp as string : new Date().toISOString();
     const label = has(meta, 'metadata') && has(meta.metadata, 'label')
         ? (meta.metadata as Record<string, string>).label
         : undefined;
