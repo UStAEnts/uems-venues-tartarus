@@ -84,10 +84,10 @@ const logger = winston.createLogger({
 
 /**
  * Constructs a child logger of {@link logger} which attaches the given label
- * @param label
+ * @param labels the set of labels to attach to this logger, they will be joined into one single string
  */
-const makeLogger = (label: string): winston.Logger => (logger.child({
-    label,
+const makeLogger = (...labels: string[]): winston.Logger => (logger.child({
+    label: labels.join(' | '),
 }));
 
 /**
