@@ -253,10 +253,36 @@ export class Database implements VenueDatabase {
             throw new Error('invalid object ID');
         }
 
-    update(update: VenueMessage.UpdateVenueMessage): Promise<string[]> | PromiseLike<string[]> {
-        return Promise.resolve([]);
-    }
+        const objectID = ObjectId.createFromHexString(id);
+        const query = {
+            _id: objectID,
+        };
+        const actions = {
+            $set: document,
+        };
 
+        __.debug('executing update query', {
+            query,
+            actions,
+        });
+
+        const result = await this._database
+            .collection(this._configuration.collection)
+            .updateOne(
+                query,
+                actions,
+            );
+
+        __.debug('update query result received', {
+            result,
+        });
+
+        if (result.result.ok === 1) {
+            return [id];
+        }
+
+        throw new Error('failed to delete');
+    }
 
     /**
      * Attaches an event listener to the underlying event emitter used by this database handler
