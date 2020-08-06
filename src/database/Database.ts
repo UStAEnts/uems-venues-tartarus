@@ -151,7 +151,9 @@ export class Database implements VenueDatabase {
         }
 
         if (query.name) {
-            find.name = query.name;
+            find.$text = {
+                $search: query.name,
+            };
         }
 
         if (query.capacity) {
@@ -190,7 +192,7 @@ export class Database implements VenueDatabase {
         const result: InternalVenue[] = await this._database
             .collection(this._configuration.collection)
             .find(find)
-            .toArray() as InternalVenue[];
+            .toArray() as VenueRepresentation[];
 
         return result;
     };
