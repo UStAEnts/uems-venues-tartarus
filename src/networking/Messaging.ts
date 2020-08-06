@@ -88,6 +88,8 @@ export class RabbitNetworkHandler {
      */
     private _connection?: Connection;
 
+    private _responseChannel?: Channel;
+
     /**
      * The message validator which should be used to validate incoming messages
      * @private
@@ -161,8 +163,8 @@ export class RabbitNetworkHandler {
         _a.debug('event listeners configured');
 
         // Ensure that the gateway exchange exists
-        const responseChannel = await this._connection.createChannel();
-        await responseChannel.assertExchange(this._configuration.gateway, 'direct');
+        this._responseChannel = await this._connection.createChannel();
+        await this._responseChannel.assertExchange(this._configuration.gateway, 'direct');
 
         _a.debug('response exchange created');
 
