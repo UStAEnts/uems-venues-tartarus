@@ -15,7 +15,7 @@ export interface VenueDatabase {
      * format
      * @param query the query received by the system
      */
-    query(query: VenueMessage.ReadVenueMessage): Promise<InternalVenue[]> | PromiseLike<InternalVenue[]>;
+    query(query: VenueMessage.ReadVenueMessage): Promise<VenueRepresentation[]> | PromiseLike<VenueRepresentation[]>;
 
     /**
      * Creates a new venue in the data store with the provided property. Returns an array of IDs of the created
