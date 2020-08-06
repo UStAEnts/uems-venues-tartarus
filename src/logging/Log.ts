@@ -1,6 +1,6 @@
 import winston from "winston";
-import { has } from "../utilities/ObjectUtilities";
 import util from 'util';
+import { has } from "@uems/uemscommlib/build/utilities/ObjectUtilities";
 
 /**
  * The current environment simplified to either dev or prod only. If NODE_ENV is not set to dev we are assumed to be in
