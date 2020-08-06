@@ -40,12 +40,29 @@ export type MessagingConfiguration = z.infer<typeof MessagingConfigurationSchema
  */
 interface RabbitNetworkHandlerEvents {
     ready: () => void,
-    create: (message: VM.CreateVenueMessage, send: (res: VenueResponse) => void) => void,
-    delete: (message: VM.DeleteVenueMessage, send: (res: VenueResponse) => void) => void,
-    query: (message: VM.ReadVenueMessage, send: (res: VenueResponse) => void) => void,
-    update: (message: VM.UpdateVenueMessage, send: (res: VenueResponse) => void) => void,
-    any: (message: VenueMessage, send: (res: VenueResponse) => void) => void,
-    error: (error: Error) => void,
+    create: (
+        message: VM.CreateVenueMessage,
+        send: (res: VenueResponseMessage | VenueReadResponseMessage) => void,
+    ) => void | Promise<void>,
+    delete: (
+        message: VM.DeleteVenueMessage,
+        send: (res: VenueResponseMessage | VenueReadResponseMessage) => void,
+    ) => void | Promise<void>,
+    query: (
+        message: VM.ReadVenueMessage,
+        send: (res: VenueResponseMessage | VenueReadResponseMessage) => void,
+    ) => void | Promise<void>,
+    update: (
+        message: VM.UpdateVenueMessage,
+        send: (res: VenueResponseMessage | VenueReadResponseMessage) => void,
+    ) => void | Promise<void>,
+    any: (
+        message: VenueMessage,
+        send: (res: VenueResponseMessage | VenueReadResponseMessage) => void,
+    ) => void | Promise<void>,
+    error: (
+        error: Error,
+    ) => void,
 }
 
 /**
