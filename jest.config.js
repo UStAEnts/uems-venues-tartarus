@@ -4,4 +4,5 @@ module.exports = {
   collectCoverage: true,
   coverageProvider: 'v8',
   errorOnDeprecated: true,
+  modulePathIgnorePatterns: ['build', '__tests__/utilities'],
 };
