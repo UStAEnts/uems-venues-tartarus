@@ -1,5 +1,9 @@
 <p align="center">
   <img width="100" height="100" src="https://github.com/ents-crew/uems-venues-tartarus/blob/master/venues.png?raw=true">
+  <br>
+  <a href="https://coveralls.io/github/ents-crew/uems-venues-tartarus?branch=master">
+    <img src="https://coveralls.io/repos/github/ents-crew/uems-venues-tartarus/badge.svg?branch=master" alt="Coverage Status"/>
+  </a>
 </p>
 
 # uems-venues-tartarus
