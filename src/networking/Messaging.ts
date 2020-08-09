@@ -6,8 +6,11 @@ import {
 } from '@uems/uemscommlib';
 import { Channel, connect, Connection, ConsumeMessage, Options } from 'amqplib';
 import { createNanoEvents, Unsubscribe } from 'nanoevents';
-import { _ml } from '../logging/Log';
 import * as z from 'zod';
+import { MessageValidator } from '@uems/uemscommlib/build/messaging/MessageValidator';
+import { has } from '@uems/uemscommlib/build/utilities/ObjectUtilities';
+import { constants } from 'http2';
+import { _ml } from '../logging/Log';
 
 import VenueMessage = VM.VenueMessage;
 import VenueResponseMessage = VenueResponse.VenueResponseMessage;
@@ -65,16 +68,14 @@ interface RabbitNetworkHandlerEvents {
     ) => void,
 }
 
-/**
- * A handler for messages received from the rabbit mq message broker and dispatching them via event emitters.
- */
-export class RabbitNetworkHandler {
+export type ConnectFunction = (url: string | Options.Connect, socketOptions?: any) => Promise<Connection>;
+// Most basic abstraction
+// - Connects to rabbitmq
+// - Processes incoming messages
+// - Validates content
+// - Calls listeners
 
-    /**
-     * The event emitter supporting this network handler used to dispatch functions
-     * @private
-     */
-    private _emitter = createNanoEvents<RabbitNetworkHandlerEvents>();
+export abstract class AbstractBrokerHandler {
 
     /**
      * If this network handler currently has successfully configured connection to the rabbit mq server
@@ -86,29 +87,38 @@ export class RabbitNetworkHandler {
      * The open connection to the rabbit mq server
      * @private
      */
-    private _connection?: Connection;
+    protected _connection?: Connection;
 
+    /**
+     * The channel on which the responses should be made
+     * @private
+     */
     private _responseChannel?: Channel;
 
     /**
-     * The message validator which should be used to validate incoming messages
+     * Handlers current waiting for a ready signal
      * @private
      */
-    private readonly MESSAGE_VALIDATOR = new VenueMessageValidator();
+    private _waitingForReady: ((...args: any) => void)[] = [];
 
-    /**
-     * The message validator which should be used for validating outgoing messages
-     * @private
-     */
-    private readonly RESPONSE_VALIDATOR = new VenueResponseValidator();
-
-    constructor(
+    protected constructor(
         /**
          * The configuration used to setup the message broker including the queues names
          */
         private _configuration: MessagingConfiguration,
+        /**
+         * The validator which should be used to parse incoming messages received from the broker
+         * @private
+         */
+        private _incomingValidator: MessageValidator,
+        /**
+         * The validator which should be used to parse outgoing messages from the clients
+         * @private
+         */
+        private _outgoingValidator: MessageValidator,
+        connectionMethod?: ConnectFunction,
     ) {
-        connect(_configuration.options).then((connection) => {
+        (connectionMethod ?? connect)(_configuration.options).then((connection) => {
             this._connection = connection;
             return this.setupConnection();
         }).catch((err: unknown) => {
@@ -117,17 +127,24 @@ export class RabbitNetworkHandler {
                     error: err,
                 });
 
-                this._emitter.emit('error', err);
+                void this.error(err);
             } else {
                 __.error(`received an error via catch of amqplib connect but it did not match an instance of 
                 an error. The error is logged here and an unknown error is being passed to the event handlers`, {
                     error: err,
                 });
 
-                this._emitter.emit('error', new Error('Unknown error on amqplib connection reject'));
+                void this.error(new Error('Unknown error on amqplib connection reject'));
             }
         });
     }
+
+    public onReady = (x: ((...args: any) => void)): void => {
+        if (this._connected) x();
+        else {
+            this._waitingForReady.push(x);
+        }
+    };
 
     /**
      * Logs the error submitted on the amqplib logger and outputs special messages in the case of a connection closing
@@ -141,6 +158,8 @@ export class RabbitNetworkHandler {
         if (err.message === 'Connection closing') {
             _a.warn('connection closing message received, this should be handled by the close handler');
         }
+
+        void this.error(err);
     };
 
     /**
@@ -158,6 +177,7 @@ export class RabbitNetworkHandler {
         this._connection.on('close', () => {
             this._connected = false;
             _a.warn('disconnected from the message broker due to a close event being received on the connection');
+            void this.error(Error('disconnected[close]'));
         });
 
         _a.debug('event listeners configured');
@@ -203,7 +223,8 @@ export class RabbitNetworkHandler {
         _a.debug('consumer attached, ready to receive');
 
         this._connected = true;
-        this._emitter.emit('ready');
+        this._waitingForReady.forEach((e) => e());
+        void this.ready();
     };
 
     /**
@@ -230,7 +251,7 @@ export class RabbitNetworkHandler {
             return;
         }
 
-        if (!await this.MESSAGE_VALIDATOR.validate(content)) {
+        if (!await this._incomingValidator.validate(content)) {
             __.error(`received an invalid message payload. it did not validate against the uemsCommsLib schema 
             definitions for incoming messages`, {
                 content,
@@ -238,51 +259,96 @@ export class RabbitNetworkHandler {
             return;
         }
 
-        // We now know that the message is safe!
-        const venue: VM.VenueMessage = content as VM.VenueMessage;
+        const genericErrorHandler = (err: any) => {
+            __.error('other handler failed and rejected', {
+                error: err as unknown,
+            });
+            void this.error(new Error('generic handler rejects'));
+        };
 
-        // Dispatch it out to the handlers and then wait for a reply
-        switch (venue.msg_intention) {
-            case 'CREATE':
-                __.debug('got a create message');
-                this._emitter.emit('create', venue, this.handleEventReply(venue));
-                break;
-            case 'UPDATE':
-                __.debug('got an update message');
-                this._emitter.emit('update', venue, this.handleEventReply(venue));
-                break;
-            case 'DELETE':
-                __.debug('got a delete message');
-                this._emitter.emit('delete', venue, this.handleEventReply(venue));
-                break;
-            case 'READ':
-                __.debug('got a query message');
-                this._emitter.emit('query', venue, this.handleEventReply(venue));
-                break;
-            default:
-                __.debug('got an unknown message');
-                this._emitter.emit('any', venue, this.handleEventReply(venue));
-                break;
+        if (has(content, 'msg_intention')) {
+            switch (content.msg_intention) {
+                case 'CREATE':
+                    __.debug('got a create message');
+                    Promise.resolve(this.create(content)).catch(genericErrorHandler);
+                    break;
+                case 'UPDATE':
+                    __.debug('got an update message');
+                    Promise.resolve(this.update(content)).catch(genericErrorHandler);
+                    break;
+                case 'DELETE':
+                    __.debug('got a delete message');
+                    Promise.resolve(this.delete(content)).catch(genericErrorHandler);
+                    break;
+                case 'READ':
+                    __.debug('got a query message');
+                    Promise.resolve(this.read(content)).catch(genericErrorHandler);
+                    break;
+                default:
+                    __.debug('got an unknown message');
+                    Promise.resolve(this.other(content)).catch(genericErrorHandler);
+                    break;
+            }
+        } else {
+            Promise.resolve(this.other(content)).catch(genericErrorHandler);
         }
     };
 
-    /**
-     * Handles a response from a a message handler validating the response and responding on the message broker to the
-     * gateway. This should be used to generate callbacks for handlers.
-     * @param venue the initial venue message that needs to be handled by this callback
-     */
-    private handleEventReply = (venue: VenueMessage) => (
-        (response: VR.VenueResponseMessage | VR.VenueReadResponseMessage): void => {
-            __.info(`got a response to message ${venue.msg_id} of status ${response.status}`);
-
-            if (!this._responseChannel) {
-                __.error('got a response but the response channel is undefined?');
-                return;
-            }
-
-            this._responseChannel.publish(this._configuration.gateway, '', Buffer.from(JSON.stringify(response)));
+    protected async send(messageID: number, messageIntention: string, response: any) {
+        if (!this._responseChannel) {
+            __.error('got a response but the response channel is undefined?');
+            return;
         }
-    );
+
+        if (!await this._outgoingValidator.validate(response)) {
+            __.error(`a response was submitted to the handler that did not validate against the provided 
+            outgoing validator object. sending an error response to the parent instead`, {
+                response: response as unknown,
+            });
+
+            this._responseChannel.publish(this._configuration.gateway, '', Buffer.from(JSON.stringify({
+                msg_id: messageID,
+                msg_intention: messageIntention,
+                status: constants.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+            })));
+
+            return;
+        }
+
+        this._responseChannel.publish(this._configuration.gateway, '', Buffer.from(JSON.stringify(response)));
+    }
+
+    protected abstract error(err?: any): void | PromiseLike<void> | Promise<void>;
+
+    protected abstract ready(): void | PromiseLike<void> | Promise<void>;
+
+    protected abstract create(message: Record<string, any>): void | PromiseLike<void> | Promise<void>;
+
+    protected abstract delete(message: Record<string, any>): void | PromiseLike<void> | Promise<void>;
+
+    protected abstract update(message: Record<string, any>): void | PromiseLike<void> | Promise<void>;
+
+    protected abstract read(message: Record<string, any>): void | PromiseLike<void> | Promise<void>;
+
+    protected abstract other(message: Record<string, any>): void | PromiseLike<void> | Promise<void>;
+}
+
+export class RabbitNetworkHandler extends AbstractBrokerHandler {
+
+    /**
+     * The event emitter supporting this network handler used to dispatch functions
+     * @private
+     */
+    private _emitter = createNanoEvents<RabbitNetworkHandlerEvents>();
+
+    constructor(configuration: MessagingConfiguration, connectionMethod?: ConnectFunction) {
+        super(
+            configuration,
+            new VenueMessageValidator(),
+            new VenueResponseValidator(),
+            connectionMethod,
+        );
+    }
 
     /**
      * Attaches an event listener to the underlying event emitter used by this network handler
@@ -308,6 +374,51 @@ export class RabbitNetworkHandler {
         });
 
         return unbind;
+    }
+
+    /**
+     * Handles a response from a a message handler validating the response and responding on the message broker to the
+     * gateway. This should be used to generate callbacks for handlers.
+     * @param venue the initial venue message that needs to be handled by this callback
+     */
+    private handleReply = (venue: VenueMessage) => (
+        (response: VR.VenueResponseMessage | VR.VenueReadResponseMessage): void => {
+            __.info(`got a response to message ${venue.msg_id} of status ${response.status}`);
+            void super.send(venue.msg_id, venue.msg_intention, response);
+        }
+    );
+
+    protected create(message: Record<string, any>): void | PromiseLike<void> | Promise<void> {
+        const cast = message as (VM.CreateVenueMessage);
+        this._emitter.emit('create', cast, this.handleReply(cast));
+    }
+
+    protected delete(message: Record<string, any>): void | PromiseLike<void> | Promise<void> {
+        const cast = message as (VM.DeleteVenueMessage);
+        this._emitter.emit('delete', cast, this.handleReply(cast));
+    }
+
+    protected update(message: Record<string, any>): void | PromiseLike<void> | Promise<void> {
+        const cast = message as (VM.UpdateVenueMessage);
+        this._emitter.emit('update', cast, this.handleReply(cast));
+    }
+
+    protected read(message: Record<string, any>): void | PromiseLike<void> | Promise<void> {
+        const cast = message as (VM.ReadVenueMessage);
+        this._emitter.emit('query', cast, this.handleReply(cast));
+    }
+
+    protected other(message: Record<string, any>): void | PromiseLike<void> | Promise<void> {
+        const cast = message as (VM.VenueMessage);
+        this._emitter.emit('any', cast, this.handleReply(cast));
+    }
+
+    protected ready(): void | PromiseLike<void> | Promise<void> {
+        this._emitter.emit('ready');
+    }
+
+    protected error(err?: any): void | PromiseLike<void> | Promise<void> {
+        this._emitter.emit('error', err);
     }
 
 }
