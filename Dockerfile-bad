@@ -1,0 +1,13 @@
+FROM node:current-alpine AS compile
+
+# Make sure we are executing in production here
+ENV NODE_ENV=dev
+
+# Finally set the command to execute
+CMD ["node", "build/index.js"]
+
+WORKDIR /usr/app
+
+# Copy in all the source files and build the typescript project
+ADD . /usr/app
+RUN npm run tsc
