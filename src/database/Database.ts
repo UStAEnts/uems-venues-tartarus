@@ -4,9 +4,9 @@ import * as z from 'zod';
 import { VenueMessage, VenueResponse } from '@uems/uemscommlib';
 import { has } from '@uems/uemscommlib/build/utilities/ObjectUtilities';
 import { VenueValidators } from '@uems/uemscommlib/build/venues/VenueValidators';
+import { _ml } from "../logging/Log";
 import InternalVenue = VenueResponse.InternalVenue;
 import VenueRepresentation = VenueValidators.VenueRepresentation;
-import { _ml } from "../logging/Log";
 
 const __ = _ml(__filename);
 
@@ -194,6 +194,16 @@ export class Database implements VenueDatabase {
             .find(find)
             .toArray() as VenueRepresentation[];
 
+        // Move _id to id for the response
+        for (const r of result) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+            //@ts-ignore
+            r.id = r._id.toString();
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
+            //@ts-ignore
+            delete r._id;
+        }
+
         return result;
     };
 
@@ -272,10 +282,6 @@ export class Database implements VenueDatabase {
                 query,
                 actions,
             );
-
-        __.debug('update query result received', {
-            result,
-        });
 
         if (result.result.ok === 1) {
             return [id];
