@@ -26,9 +26,11 @@ const nowString = `${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDay(
 const fileTransport = [new winston.transports.File({
     dirname: 'logs',
     filename: `summary-${environment}.${nowString}.log`,
+    // @ts-ignore
     format: winston.format.json(),
 })];
 
+// @ts-ignore
 const formatter = winston.format.printf(({ level, message, ...meta }) => {
     const timestamp = has(meta, 'timestamp') ? meta.timestamp as string : new Date().toISOString();
     const label = has(meta, 'metadata') && has(meta.metadata, 'label')
@@ -77,6 +79,7 @@ const logger = winston.createLogger({
         ...(useFile ? fileTransport : []),
         ...(environment === 'prod' ? [] : [
             new winston.transports.Console({
+                // @ts-ignore
                 format: prettyFormat,
                 level: 'silly',
             }),
