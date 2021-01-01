@@ -7,7 +7,6 @@ import {
 import { Channel, connect, Connection, ConsumeMessage, Options } from 'amqplib';
 import { createNanoEvents, Unsubscribe } from 'nanoevents';
 import * as z from 'zod';
-import { MessageValidator } from '@uems/uemscommlib/build/messaging/MessageValidator';
 import { has } from '@uems/uemscommlib/build/utilities/ObjectUtilities';
 import { constants } from 'http2';
 import { _ml } from '../logging/Log';
@@ -15,6 +14,7 @@ import { _ml } from '../logging/Log';
 import VenueMessage = VM.VenueMessage;
 import VenueResponseMessage = VenueResponse.VenueResponseMessage;
 import VenueReadResponseMessage = VenueResponse.VenueReadResponseMessage;
+import { MessageValidator } from "@uems/uemscommlib/build/messaging/MessageValidator";
 
 const __ = _ml(__filename);
 const _a = _ml(`${__filename} | amqp`);

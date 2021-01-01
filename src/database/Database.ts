@@ -3,10 +3,8 @@ import { createNanoEvents, Unsubscribe } from 'nanoevents';
 import * as z from 'zod';
 import { VenueMessage, VenueResponse } from '@uems/uemscommlib';
 import { has } from '@uems/uemscommlib/build/utilities/ObjectUtilities';
-import { VenueValidators } from '@uems/uemscommlib/build/venues/VenueValidators';
 import { _ml } from "../logging/Log";
 import InternalVenue = VenueResponse.InternalVenue;
-import VenueRepresentation = VenueValidators.VenueRepresentation;
 
 const __ = _ml(__filename);
 
@@ -20,7 +18,7 @@ export interface VenueDatabase {
      * format
      * @param query the query received by the system
      */
-    query(query: VenueMessage.ReadVenueMessage): Promise<VenueRepresentation[]> | PromiseLike<VenueRepresentation[]>;
+    query(query: VenueMessage.ReadVenueMessage): Promise<InternalVenue[]> | PromiseLike<InternalVenue[]>;
 
     /**
      * Creates a new venue in the data store with the provided property. Returns an array of IDs of the created
@@ -192,7 +190,7 @@ export class Database implements VenueDatabase {
         const result: InternalVenue[] = await this._database
             .collection(this._configuration.collection)
             .find(find)
-            .toArray() as VenueRepresentation[];
+            .toArray() as InternalVenue[];
 
         // Move _id to id for the response
         for (const r of result) {
