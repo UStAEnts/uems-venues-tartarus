@@ -213,6 +213,9 @@ export class Database implements VenueDatabase {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         const { msg_intention, msg_id, status, ...document } = create;
 
+        // @ts-ignore: TODO: replace this with a proper comms update
+        document.date = Date.now();
+
         const result = await this._database
             .collection(this._configuration.collection)
             .insertOne(document);
