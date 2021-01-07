@@ -52,6 +52,7 @@ async function execute(
             msg_id: message.msg_id,
             status,
             result: result as VenueResponse.InternalVenue[],
+            userID: message.userID,
         });
     } else {
         send({
@@ -59,6 +60,7 @@ async function execute(
             msg_id: message.msg_id,
             status,
             result: result as string[],
+            userID: message.userID,
         });
     }
 }
