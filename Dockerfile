@@ -26,5 +26,8 @@ RUN npm install --production
 # Finally copy in the built files
 COPY --from=compile /usr/app/build .
 
+# Then copy in the currently loaded configuration
+COPY config/configuration.json /usr/app/config/
+
 # Finally set the command to execute
 CMD ["node", "index.js"]
