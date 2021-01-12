@@ -8,6 +8,15 @@ import InternalVenue = VenueResponse.InternalVenue;
 
 const __ = _ml(__filename);
 
+export type InDatabaseVenue = {
+    _id: ObjectId,
+    name: string,
+    capacity: number,
+    color?: string,
+    user: string,
+    date: number,
+};
+
 /**
  * Interface for all data sources designed to be used for manipulating venues
  */
@@ -113,30 +122,37 @@ export class Database implements VenueDatabase {
          * The configuration for connecting to the database which will be used to form the URI string and connection
          * settings
          */
-        private _configuration: MongoDBConfiguration,
+        private _configuration: MongoDBConfiguration | { client: MongoClient, database: string, collection: string },
     ) {
-        const username = encodeURIComponent(_configuration.username);
-        const password = encodeURIComponent(_configuration.password);
-        const uri = encodeURIComponent(_configuration.uri);
-        const server = encodeURIComponent(_configuration.server);
-        const { port } = _configuration;
+        if (MongoDBConfigurationSchema.check(_configuration)) {
+            const username = encodeURIComponent(_configuration.username);
+            const password = encodeURIComponent(_configuration.password);
+            const uri = encodeURIComponent(_configuration.uri);
+            const server = encodeURIComponent(_configuration.server);
+            const { port } = _configuration;
 
-        MongoClient.connect(
-            `mongodb://${username}:${password}@${uri}:${port}/${server}`,
-            {
-                ..._configuration.settings,
-                useNewUrlParser: true,
-                useUnifiedTopology: true,
-            },
-        ).then((client) => {
-            this._client = client;
-            this._database = client.db(_configuration.database);
+            MongoClient.connect(
+                `mongodb://${username}:${password}@${uri}:${port}/${server}`,
+                {
+                    ..._configuration.settings,
+                    useNewUrlParser: true,
+                    useUnifiedTopology: true,
+                },
+            ).then((client) => {
+                this._client = client;
+                this._database = client.db(_configuration.database);
 
+                this._connected = true;
+                this._emitter.emit('ready');
+            }).catch((err: unknown) => {
+                this._emitter.emit('error', err);
+            });
+        } else {
+            this._client = _configuration.client;
+            this._database = this._client.db(_configuration.database);
             this._connected = true;
             this._emitter.emit('ready');
-        }).catch((err: unknown) => {
-            this._emitter.emit('error', err);
-        });
+        }
     }
 
     query = async (query: VenueMessage.ReadVenueMessage): Promise<InternalVenue[]> => {
@@ -195,10 +211,10 @@ export class Database implements VenueDatabase {
         // Move _id to id for the response
         for (const r of result) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-            //@ts-ignore
+            // @ts-ignore
             r.id = r._id.toString();
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-            //@ts-ignore
+            // @ts-ignore
             delete r._id;
         }
 
