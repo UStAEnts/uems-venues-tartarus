@@ -37,6 +37,7 @@
     "typescript": "^3.9.7"
   },
   "dependencies": {
+    "@uems/micro-builder": "0.0.12",
     "@uems/uemscommlib": "0.1.0-beta.36",
     "amqplib": "^0.6.0",
     "colors": "^1.4.0",
