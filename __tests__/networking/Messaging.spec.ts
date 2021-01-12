@@ -1,9 +1,15 @@
+import { VenueMessage } from "@uems/uemscommlib";
+
 process.env.NODE_ENV = 'dev';
 import { AbstractBrokerHandler, ConnectFunction, RabbitNetworkHandler } from "../../src/networking/Messaging";
 import { MessageValidator } from "@uems/uemscommlib/build/messaging/MessageValidator";
 import { createTest, MessagingConnection } from '../utilities/Mocking';
 import { has } from "@uems/uemscommlib/build/utilities/ObjectUtilities";
 import { MessageFields, MessageProperties } from "amqplib";
+import CreateVenueMessage = VenueMessage.CreateVenueMessage;
+import DeleteVenueMessage = VenueMessage.DeleteVenueMessage;
+import ReadVenueMessage = VenueMessage.ReadVenueMessage;
+import UpdateVenueMessage = VenueMessage.UpdateVenueMessage;
 
 const configuration = {
     gateway: 'gateway',
@@ -19,33 +25,38 @@ const generateTestMessage = (type: 'delete' | 'read' | 'update' | 'create') => {
             return {
                 msg_id: 0,
                 msg_intention: 'CREATE',
+                userID: 'anonymous',
                 status: 0,
                 name: 'a',
                 capacity: 10,
+                userid: 'anonymous',
                 color: '#aeaeae',
-            }
+            } as CreateVenueMessage
         case "delete":
             return {
                 msg_id: 0,
                 msg_intention: 'DELETE',
                 status: 0,
+                userID: 'anonymous',
                 id: "abc",
-            }
+            } as DeleteVenueMessage
         case "read":
             return {
                 msg_id: 0,
                 msg_intention: 'READ',
+                userID: 'anonymous',
                 status: 0,
                 name: "abc",
-            }
+            } as ReadVenueMessage
         case "update":
             return {
                 msg_id: 0,
                 msg_intention: 'UPDATE',
                 status: 0,
+                userID: 'anonymous',
                 name: "abc",
                 id: "abc",
-            }
+            } as UpdateVenueMessage
     }
 }
 
@@ -369,6 +380,7 @@ describe('Messaging.ts', () => {
                         result: [],
                         status: 100,
                         msg_id: 0,
+                        userID: 'anonymous',
                         msg_intention: 'READ',
                     });
 
