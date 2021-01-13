@@ -1,10 +1,18 @@
-import { Db, MongoClient, ObjectId } from 'mongodb';
+import { Db, FilterQuery, MongoClient, ObjectId } from 'mongodb';
 import { createNanoEvents, Unsubscribe } from 'nanoevents';
 import * as z from 'zod';
 import { VenueMessage, VenueResponse } from '@uems/uemscommlib';
 import { has } from '@uems/uemscommlib/build/utilities/ObjectUtilities';
-import { _ml } from "../logging/Log";
+import {
+    genericCreate,
+    genericDelete,
+    genericEntityConversion,
+    genericUpdate
+} from '@uems/micro-builder/build/utility/GenericDatabaseFunctions';
+import { ClientFacingError } from '@uems/micro-builder/build/errors/ClientFacingError';
+import { _ml } from '../logging/Log';
 import InternalVenue = VenueResponse.InternalVenue;
+import CreateVenueMessage = VenueMessage.CreateVenueMessage;
 
 const __ = _ml(__filename);
 
@@ -16,6 +24,33 @@ export type InDatabaseVenue = {
     user: string,
     date: number,
 };
+
+export type CreateInDatabaseVenue = Omit<InDatabaseVenue, '_id'>;
+
+const dbToInternal = (data: InDatabaseVenue): InternalVenue => genericEntityConversion(
+    data,
+    {
+        name: 'name',
+        user: 'user',
+        color: 'color',
+        capacity: 'capacity',
+        _id: 'id',
+    },
+    '_id',
+);
+
+const createToDb = (data: CreateVenueMessage): CreateInDatabaseVenue => ({
+    ...genericEntityConversion(
+        data,
+        {
+            capacity: 'capacity',
+            color: 'color',
+            userid: 'user',
+            name: 'name',
+        },
+    ),
+    date: Date.now(),
+});
 
 /**
  * Interface for all data sources designed to be used for manipulating venues
@@ -124,6 +159,16 @@ export class Database implements VenueDatabase {
          */
         private _configuration: MongoDBConfiguration | { client: MongoClient, database: string, collection: string },
     ) {
+        const clear = this.once('ready', () => {
+            clear();
+
+            if (!this._database) throw new Error('ready was thrown when it wasn\'t ready');
+            void this._database.collection(this._configuration.collection).createIndex(
+                { name: 'text' },
+                { unique: true },
+            );
+        });
+
         if (MongoDBConfigurationSchema.check(_configuration)) {
             const username = encodeURIComponent(_configuration.username);
             const password = encodeURIComponent(_configuration.password);
@@ -158,7 +203,7 @@ export class Database implements VenueDatabase {
     query = async (query: VenueMessage.ReadVenueMessage): Promise<InternalVenue[]> => {
         if (!this._database) throw new Error('database was used before it was ready');
 
-        const find: Record<string, unknown> = {};
+        const find: FilterQuery<InDatabaseVenue> = {};
 
         if (query.id) {
             find._id = new ObjectId(query.id);
@@ -203,46 +248,18 @@ export class Database implements VenueDatabase {
             }
         }
 
-        const result: InternalVenue[] = await this._database
+        return (await this._database
             .collection(this._configuration.collection)
             .find(find)
-            .toArray() as InternalVenue[];
-
-        // Move _id to id for the response
-        for (const r of result) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-            // @ts-ignore
-            r.id = r._id.toString();
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-            // @ts-ignore
-            delete r._id;
-        }
-
-        return result;
+            .toArray()).map((e) => dbToInternal(e));
     };
 
     async create(create: VenueMessage.CreateVenueMessage): Promise<string[]> {
         if (!this._database) throw new Error('database was used before it was ready');
 
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        const { msg_intention, msg_id, status, ...document } = create;
-        // @ts-ignore
-        document.user = document.userid;
-        delete document.userID;
-        delete document.userid;
-
-        // @ts-ignore: TODO: replace this with a proper comms update
-        document.date = Date.now();
-
-        const result = await this._database
-            .collection(this._configuration.collection)
-            .insertOne(document);
-
-        if (result.insertedCount === 1 && result.insertedId) {
-            return [(result.insertedId as ObjectId).toHexString()];
-        }
-
-        throw new Error('failed to insert');
+        return genericCreate(create, createToDb, this._database.collection(this._configuration.collection), () => {
+            throw new ClientFacingError('duplicate venue name');
+        });
     }
 
     async delete(del: VenueMessage.DeleteVenueMessage): Promise<string[]> {
@@ -253,62 +270,31 @@ export class Database implements VenueDatabase {
             throw new Error('invalid object ID');
         }
 
-        const objectID = ObjectId.createFromHexString(id);
-        const query = {
-            _id: objectID,
-        };
-
-        __.debug('executing delete query', {
-            query,
-        });
-
-        // TODO: validating the incoming ID
-        const result = await this._database
-            .collection(this._configuration.collection)
-            .deleteOne(query);
-
-        if (result.result.ok === 1 && result.deletedCount === 1) {
-            return [id];
-        }
-
-        throw new Error('failed to delete');
+        return genericDelete<InDatabaseVenue>(
+            { _id: new ObjectId(id) },
+            id,
+            this._database.collection(this._configuration.collection),
+        );
     }
 
     async update(update: VenueMessage.UpdateVenueMessage): Promise<string[]> {
         if (!this._database) throw new Error('database was used before it was ready');
 
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        const { msg_intention, msg_id, status, id, ...document } = update;
+        const { id } = update;
 
         if (!ObjectId.isValid(id)) {
             throw new Error('invalid object ID');
         }
 
-        const objectID = ObjectId.createFromHexString(id);
-        const query = {
-            _id: objectID,
-        };
-        const actions = {
-            $set: document,
-        };
-
-        __.debug('executing update query', {
-            query,
-            actions,
-        });
-
-        const result = await this._database
-            .collection(this._configuration.collection)
-            .updateOne(
-                query,
-                actions,
-            );
-
-        if (result.result.ok === 1) {
-            return [id];
-        }
-
-        throw new Error('failed to delete');
+        return genericUpdate(
+            update,
+            ['capacity', 'color', 'name'],
+            this._database.collection(this._configuration.collection),
+            undefined,
+            () => {
+                throw new ClientFacingError('cannot update to existing venue name');
+            },
+        );
     }
 
     /**
