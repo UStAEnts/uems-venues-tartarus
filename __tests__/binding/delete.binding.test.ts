@@ -1,14 +1,12 @@
-import { Db, MongoClient, ObjectId } from "mongodb";
-import { defaultAfterAll, defaultAfterEach, defaultBeforeAll, defaultBeforeEach } from "../utilities/setup";
-import { BindingBroker } from "../utilities/BindingBroker";
-import { BaseSchema } from "@uems/uemscommlib/build/BaseSchema";
-import Intentions = BaseSchema.Intentions;
-import { EntStateMessage, MsgStatus, StateMessage, TopicMessage, VenueMessage } from "@uems/uemscommlib";
+import { Db, MongoClient, ObjectId } from 'mongodb';
+import { BaseSchema, MsgStatus, VenueMessage } from '@uems/uemscommlib';
+import { defaultAfterAll, defaultAfterEach, defaultBeforeAll, defaultBeforeEach } from '../utilities/setup';
+import { BindingBroker } from '../utilities/BindingBroker';
 
-import { Database } from "../../src/database/Database";
-import { RabbitNetworkHandler } from "../../src/networking/Messaging";
-import bind from "../../src/binding/VenueDatabaseBinding";
-import exp = require("constants");
+import { Database } from '../../src/database/Database';
+import { RabbitNetworkHandler } from '../../src/networking/Messaging';
+import bind from '../../src/binding/VenueDatabaseBinding';
+import Intentions = BaseSchema.Intentions;
 import DeleteVenueMessage = VenueMessage.DeleteVenueMessage;
 import UpdateVenueMessage = VenueMessage.UpdateVenueMessage;
 import ReadVenueMessage = VenueMessage.ReadVenueMessage;
@@ -20,7 +18,7 @@ const empty = <T extends Intentions>(intention: T): { msg_intention: T, msg_id: 
     msg_id: 0,
     status: 0,
     userID: 'user',
-})
+});
 
 describe('create messages of states', () => {
     let client!: MongoClient;
@@ -51,15 +49,15 @@ describe('create messages of states', () => {
             capacity: 1000,
             color: '#aaaaaa',
             user: 'something',
-            date: Date.now()
+            date: Date.now(),
         }, {
             _id: new ObjectId('56d9bf92f9be48771d6fe5b4'),
             name: 'name other',
             capacity: 1000,
             color: '#aaaaaa',
             user: 'something',
-            date: Date.now()
-        }], client, db)
+            date: Date.now(),
+        }], client, db);
     });
     afterEach(() => defaultAfterEach(client, db));
 

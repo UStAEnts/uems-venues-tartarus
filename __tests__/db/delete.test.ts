@@ -1,15 +1,15 @@
-import { Db, MongoClient, ObjectId } from "mongodb";
-import { defaultAfterAll, defaultAfterEach, defaultBeforeAll, defaultBeforeEach } from "../utilities/setup";
-import { BaseSchema } from "@uems/uemscommlib/build/BaseSchema";
+import { Db, MongoClient, ObjectId } from 'mongodb';
+import { BaseSchema } from '@uems/uemscommlib';
+import { defaultAfterAll, defaultAfterEach, defaultBeforeAll, defaultBeforeEach } from '../utilities/setup';
+import { Database } from '../../src/database/Database';
 import Intentions = BaseSchema.Intentions;
-import { Database } from "../../src/database/Database";
 
 const empty = <T extends Intentions>(intention: T): { msg_intention: T, msg_id: 0, status: 0, userID: string } => ({
     msg_intention: intention,
     msg_id: 0,
     status: 0,
     userID: 'user',
-})
+});
 
 describe('delete messages of states', () => {
     let client!: MongoClient;
@@ -28,14 +28,14 @@ describe('delete messages of states', () => {
         capacity: 1000,
         color: '#aaaaaa',
         user: 'something',
-        date: Date.now()
+        date: Date.now(),
     }, {
         _id: new ObjectId('56d9bf92f9be48771d6fe5b4'),
         name: 'name other',
         capacity: 1000,
         color: '#aaaaaa',
         user: 'something',
-        date: Date.now()
+        date: Date.now(),
     }], client, db));
 
     afterEach(() => defaultAfterEach(client, db));
@@ -43,8 +43,8 @@ describe('delete messages of states', () => {
     let venueDB: Database;
 
     beforeAll(() => {
-        venueDB = new Database({ client: client, database: 'testing', collection: 'details' });
-    })
+        venueDB = new Database({ client, database: 'testing', collection: 'details' });
+    });
 
     it('should allow basic deletes to perform successfully', async () => {
         const id = '56d9bf92f9be48771d6fe5b2';

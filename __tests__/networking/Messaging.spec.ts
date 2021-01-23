@@ -1,11 +1,10 @@
-import { VenueMessage } from "@uems/uemscommlib";
+import { MessageValidator, VenueMessage, has } from '@uems/uemscommlib';
+
+import { MessageFields, MessageProperties } from 'amqplib';
+import { AbstractBrokerHandler, ConnectFunction, RabbitNetworkHandler } from '../../src/networking/Messaging';
+import { createTest, MessagingConnection } from '../utilities/Mocking';
 
 process.env.NODE_ENV = 'dev';
-import { AbstractBrokerHandler, ConnectFunction, RabbitNetworkHandler } from "../../src/networking/Messaging";
-import { MessageValidator } from "@uems/uemscommlib/build/messaging/MessageValidator";
-import { createTest, MessagingConnection } from '../utilities/Mocking';
-import { has } from "@uems/uemscommlib/build/utilities/ObjectUtilities";
-import { MessageFields, MessageProperties } from "amqplib";
 import CreateVenueMessage = VenueMessage.CreateVenueMessage;
 import DeleteVenueMessage = VenueMessage.DeleteVenueMessage;
 import ReadVenueMessage = VenueMessage.ReadVenueMessage;
@@ -21,7 +20,7 @@ const configuration = {
 
 const generateTestMessage = (type: 'delete' | 'read' | 'update' | 'create') => {
     switch (type) {
-        case "create":
+        case 'create':
             return {
                 msg_id: 0,
                 msg_intention: 'CREATE',
@@ -31,37 +30,36 @@ const generateTestMessage = (type: 'delete' | 'read' | 'update' | 'create') => {
                 capacity: 10,
                 userid: 'anonymous',
                 color: '#aeaeae',
-            } as CreateVenueMessage
-        case "delete":
+            } as CreateVenueMessage;
+        case 'delete':
             return {
                 msg_id: 0,
                 msg_intention: 'DELETE',
                 status: 0,
                 userID: 'anonymous',
-                id: "abc",
-            } as DeleteVenueMessage
-        case "read":
+                id: 'abc',
+            } as DeleteVenueMessage;
+        case 'read':
             return {
                 msg_id: 0,
                 msg_intention: 'READ',
                 userID: 'anonymous',
                 status: 0,
-                name: "abc",
-            } as ReadVenueMessage
-        case "update":
+                name: 'abc',
+            } as ReadVenueMessage;
+        case 'update':
             return {
                 msg_id: 0,
                 msg_intention: 'UPDATE',
                 status: 0,
                 userID: 'anonymous',
-                name: "abc",
-                id: "abc",
-            } as UpdateVenueMessage
+                name: 'abc',
+                id: 'abc',
+            } as UpdateVenueMessage;
     }
-}
+};
 
 class X extends MessageValidator {
-
 
     constructor(private _validate: (a: any) => boolean) {
         super({});
@@ -96,11 +94,17 @@ class TestingBroker extends AbstractBrokerHandler {
     public accessSend = (messageID: number, msgIntention: string, response: any) => this.send(messageID, msgIntention, response);
 
     public create = jest.fn();
+
     public delete = jest.fn();
+
     public error = jest.fn();
+
     public other = jest.fn();
+
     public read = jest.fn();
+
     public ready = jest.fn();
+
     public update = jest.fn();
 
 }
@@ -218,7 +222,6 @@ describe('Messaging.ts', () => {
 
             broker.onReady(() => {
 
-
                 testConnection.$send('inbox', {
                     content: Buffer.from('{"msg_intention": "CREATE"}'),
                     properties: {} as MessageProperties,
@@ -240,19 +243,23 @@ describe('Messaging.ts', () => {
 
                     testConnection.$sendSimple('inbox', '{"msg_intention": "READ"}');
                     return promisifiedTimeout(500);
-                }).then(() => {
-                    expect(broker.read).toHaveBeenCalledTimes(1);
+                })
+                    .then(() => {
+                        expect(broker.read).toHaveBeenCalledTimes(1);
 
-                    testConnection.$sendSimple('inbox', '{"msg_intention": "INVALID"}');
-                    return promisifiedTimeout(500);
-                }).then(() => {
-                    expect(broker.other).toHaveBeenCalledTimes(1);
+                        testConnection.$sendSimple('inbox', '{"msg_intention": "INVALID"}');
+                        return promisifiedTimeout(500);
+                    })
+                    .then(() => {
+                        expect(broker.other).toHaveBeenCalledTimes(1);
 
-                    testConnection.$sendSimple('inbox', '{}');
-                    return promisifiedTimeout(500);
-                }).then(() => {
-                    expect(broker.other).toHaveBeenCalledTimes(2);
-                }).then(done)
+                        testConnection.$sendSimple('inbox', '{}');
+                        return promisifiedTimeout(500);
+                    })
+                    .then(() => {
+                        expect(broker.other).toHaveBeenCalledTimes(2);
+                    })
+                    .then(done);
             });
         });
 
@@ -271,14 +278,14 @@ describe('Messaging.ts', () => {
                     const [message] = testConnection.$messages(true);
                     expect(message).not.toBeUndefined();
 
-                    const content = JSON.parse(message.data.toString())
+                    const content = JSON.parse(message.data.toString());
                     console.log(content);
                     expect(content).toHaveProperty('msg_id', 0);
                     expect(content).toHaveProperty('msg_intention', 'intention');
                     expect(content).toHaveProperty('status', 500);
 
                     done();
-                })
+                });
             });
         });
 
@@ -302,7 +309,7 @@ describe('Messaging.ts', () => {
                     const [message] = testConnection.$messages(true);
                     expect(message).not.toBeUndefined();
 
-                    const content = JSON.parse(message.data.toString())
+                    const content = JSON.parse(message.data.toString());
                     console.log(content);
                     expect(content).toHaveProperty('msg_id', 0);
                     expect(content).toHaveProperty('msg_intention', 'intention');
@@ -310,7 +317,7 @@ describe('Messaging.ts', () => {
                     expect(content).toHaveProperty('someKey', true);
 
                     done();
-                })
+                });
             });
         });
 
@@ -343,7 +350,7 @@ describe('Messaging.ts', () => {
             funcConnection = connect;
             testConnection = connection;
             broker = new RabbitNetworkHandler(configuration, funcConnection);
-        })
+        });
 
         it('should submit a fail message to the parent when invalid', (done) => {
             broker.onReady(() => {
@@ -407,7 +414,7 @@ describe('Messaging.ts', () => {
                 }).then(() => {
                     expect(update).toHaveBeenCalledTimes(1);
                     done();
-                })
+                });
             });
         });
 
@@ -428,7 +435,6 @@ describe('Messaging.ts', () => {
                 broker.on('error', error);
                 broker.on('any', any);
 
-
                 testConnection.$sendSimple('inbox', JSON.stringify(generateTestMessage('update')));
                 promisifiedTimeout(1000).then(() => {
                     expect(update).toHaveBeenCalledTimes(1);
@@ -442,15 +448,17 @@ describe('Messaging.ts', () => {
                     expect(remove).toHaveBeenCalledTimes(1);
                     testConnection.$sendSimple('inbox', JSON.stringify(generateTestMessage('read')));
                     return promisifiedTimeout(1000);
-                }).then(() => {
-                    expect(read).toHaveBeenCalledTimes(1);
-                    testConnection.$error(new Error('failed'));
-                    return promisifiedTimeout(1000);
-                }).then(() => {
-                    expect(error).toHaveBeenCalledTimes(1);
-                    done();
                 })
+                    .then(() => {
+                        expect(read).toHaveBeenCalledTimes(1);
+                        testConnection.$error(new Error('failed'));
+                        return promisifiedTimeout(1000);
+                    })
+                    .then(() => {
+                        expect(error).toHaveBeenCalledTimes(1);
+                        done();
+                    });
             });
         });
-    })
-})
+    });
+});

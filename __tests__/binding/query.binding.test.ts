@@ -1,24 +1,12 @@
-import { Db, MongoClient, ObjectId } from "mongodb";
-import { defaultAfterAll, defaultAfterEach, defaultBeforeAll, defaultBeforeEach } from "../utilities/setup";
-import { BindingBroker } from "../utilities/BindingBroker";
-import { BaseSchema } from "@uems/uemscommlib/build/BaseSchema";
+import { Db, MongoClient, ObjectId } from 'mongodb';
+import { BaseSchema, MsgStatus, VenueMessage } from '@uems/uemscommlib';
+import { defaultAfterAll, defaultAfterEach, defaultBeforeAll, defaultBeforeEach } from '../utilities/setup';
+import { BindingBroker } from '../utilities/BindingBroker';
+
+import { RabbitNetworkHandler } from '../../src/networking/Messaging';
+import { Database } from '../../src/database/Database';
+import bind from '../../src/binding/VenueDatabaseBinding';
 import Intentions = BaseSchema.Intentions;
-import { EntStateMessage, MsgStatus, StateMessage, TopicMessage, VenueMessage } from "@uems/uemscommlib";
-import UpdateEntStateMessage = EntStateMessage.UpdateEntStateMessage;
-import CreateEntStateMessage = EntStateMessage.CreateEntStateMessage;
-import UpdateStateMessage = StateMessage.UpdateStateMessage;
-import CreateTopicMessage = TopicMessage.CreateTopicMessage;
-import ReadStateMessage = StateMessage.ReadStateMessage;
-import ReadEntStateMessage = EntStateMessage.ReadEntStateMessage;
-import DeleteStateMessage = StateMessage.DeleteStateMessage;
-import DeleteTopicMessage = TopicMessage.DeleteTopicMessage;
-import ReadTopicMessage = TopicMessage.ReadTopicMessage;
-import DeleteEntStateMessage = EntStateMessage.DeleteEntStateMessage;
-import UpdateTopicMessage = TopicMessage.UpdateTopicMessage;
-import CreateStateMessage = StateMessage.CreateStateMessage;
-import { RabbitNetworkHandler } from "../../src/networking/Messaging";
-import { Database } from "../../src/database/Database";
-import bind from "../../src/binding/VenueDatabaseBinding";
 import DeleteVenueMessage = VenueMessage.DeleteVenueMessage;
 import UpdateVenueMessage = VenueMessage.UpdateVenueMessage;
 import ReadVenueMessage = VenueMessage.ReadVenueMessage;
@@ -29,7 +17,7 @@ const empty = <T extends Intentions>(intention: T): { msg_intention: T, msg_id: 
     msg_id: 0,
     status: 0,
     userID: 'user',
-})
+});
 // query for invalid returns nothing
 // query for id returns one
 // empty queries allowed
@@ -64,15 +52,15 @@ describe('query binding messages', () => {
             capacity: 1000,
             color: '#aaaaaa',
             user: 'something',
-            date: Date.now()
+            date: Date.now(),
         }, {
             _id: new ObjectId('56d9bf92f9be48771d6fe5b4'),
             name: 'name other one',
             capacity: 1000,
             color: '#aaaaaa',
             user: 'something',
-            date: Date.now()
-        }], client, db)
+            date: Date.now(),
+        }], client, db);
     });
     afterEach(() => defaultAfterEach(client, db));
 
@@ -87,13 +75,13 @@ describe('query binding messages', () => {
             expect(message.status).toEqual(MsgStatus.SUCCESS);
             expect(message.result).toHaveLength(1);
 
-            expect(message.result[0]).toHaveProperty('name', 'name')
-            expect(message.result[0]).toHaveProperty('capacity', 1000)
-            expect(message.result[0]).toHaveProperty('color', '#aaaaaa')
-            expect(message.result[0]).toHaveProperty('user', 'something')
+            expect(message.result[0]).toHaveProperty('name', 'name');
+            expect(message.result[0]).toHaveProperty('capacity', 1000);
+            expect(message.result[0]).toHaveProperty('color', '#aaaaaa');
+            expect(message.result[0]).toHaveProperty('user', 'something');
 
             done();
-        })
+        });
     });
 
     it('should support empty queries', async (done) => {
@@ -126,7 +114,7 @@ describe('query binding messages', () => {
             });
 
             done();
-        })
+        });
     });
 
 });

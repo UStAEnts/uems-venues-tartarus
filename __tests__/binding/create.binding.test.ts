@@ -1,12 +1,12 @@
-import { Db, MongoClient } from "mongodb";
-import { defaultAfterAll, defaultAfterEach, defaultBeforeAll, defaultBeforeEach } from "../utilities/setup";
-import { BindingBroker } from "../utilities/BindingBroker";
-import { BaseSchema } from "@uems/uemscommlib/build/BaseSchema";
+import { Db, MongoClient } from 'mongodb';
+import { BaseSchema, MsgStatus, VenueMessage } from '@uems/uemscommlib';
+import { defaultAfterAll, defaultAfterEach, defaultBeforeAll, defaultBeforeEach } from '../utilities/setup';
+import { BindingBroker } from '../utilities/BindingBroker';
+
+import { RabbitNetworkHandler } from '../../src/networking/Messaging';
+import { Database } from '../../src/database/Database';
+import bind from '../../src/binding/VenueDatabaseBinding';
 import Intentions = BaseSchema.Intentions;
-import { EntStateMessage, MsgStatus, StateMessage, TopicMessage, VenueMessage } from "@uems/uemscommlib";
-import { RabbitNetworkHandler } from "../../src/networking/Messaging";
-import { Database } from "../../src/database/Database";
-import bind from "../../src/binding/VenueDatabaseBinding";
 import ReadVenueMessage = VenueMessage.ReadVenueMessage;
 import DeleteVenueMessage = VenueMessage.DeleteVenueMessage;
 import UpdateVenueMessage = VenueMessage.UpdateVenueMessage;
@@ -20,7 +20,7 @@ const empty = <T extends Intentions>(intention: T): { msg_intention: T, msg_id: 
     msg_id: 0,
     status: 0,
     userID: 'user',
-})
+});
 
 describe('create messages of states', () => {
     let client!: MongoClient;
@@ -38,13 +38,13 @@ describe('create messages of states', () => {
         broker = new BindingBroker();
         fakeBroker = broker as unknown as RabbitNetworkHandler;
 
-        venueDB = new Database({client: client, collection: 'details', database: 'testing'});
+        venueDB = new Database({ client, collection: 'details', database: 'testing' });
     });
     afterAll(() => defaultAfterAll(client, db));
     beforeEach(() => {
         broker.clear();
         bind(venueDB, fakeBroker);
-        defaultBeforeEach([], client, db)
+        defaultBeforeEach([], client, db);
     });
     afterEach(() => defaultAfterEach(client, db));
 
@@ -111,7 +111,7 @@ describe('create messages of states', () => {
     });
 
     it('should fail gracefully if the database is dead', async (done) => {
-        let db: Database = new Proxy(venueDB, {
+        const db: Database = new Proxy(venueDB, {
             get(target: Database, p: PropertyKey, receiver: any): any {
                 console.log('???x2');
                 throw new Error('proxied database throwing error');

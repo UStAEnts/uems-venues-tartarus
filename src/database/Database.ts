@@ -1,8 +1,7 @@
 import { Db, FilterQuery, MongoClient, ObjectId } from 'mongodb';
 import { createNanoEvents, Unsubscribe } from 'nanoevents';
 import * as z from 'zod';
-import { VenueMessage, VenueResponse } from '@uems/uemscommlib';
-import { has } from '@uems/uemscommlib/build/utilities/ObjectUtilities';
+import { has, VenueMessage, VenueResponse } from '@uems/uemscommlib';
 import {
     genericCreate,
     genericDelete,

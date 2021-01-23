@@ -1,21 +1,21 @@
+import { Db, MongoClient } from 'mongodb';
+import { BaseSchema } from '@uems/uemscommlib';
 import {
     defaultAfterAll,
     defaultAfterEach,
     defaultBeforeAll,
     defaultBeforeEach,
     haveNoAdditionalKeys
-} from "../utilities/setup";
-import { Db, MongoClient, ObjectId } from "mongodb";
-import { BaseSchema } from "@uems/uemscommlib/build/BaseSchema";
+} from '../utilities/setup';
+import { Database } from '../../src/database/Database';
 import Intentions = BaseSchema.Intentions;
-import { Database } from "../../src/database/Database";
 
 const empty = <T extends Intentions>(intention: T): { msg_intention: T, msg_id: 0, status: 0, userID: string } => ({
     msg_intention: intention,
     msg_id: 0,
     status: 0,
     userID: 'user',
-})
+});
 
 describe('create messages of states', () => {
     let client!: MongoClient;
@@ -33,8 +33,8 @@ describe('create messages of states', () => {
     let venueDB: Database;
 
     beforeAll(() => {
-        venueDB = new Database({ client: client, database: 'testing', collection: 'details' })
-    })
+        venueDB = new Database({ client, database: 'testing', collection: 'details' });
+    });
 
     it('basic create inserts into the database', async () => {
         const result = await venueDB.create({
@@ -51,7 +51,7 @@ describe('create messages of states', () => {
         const query = await venueDB.query({ ...empty('READ') });
         expect(query).toHaveLength(1);
         expect(query[0].name).toEqual('name');
-        expect(haveNoAdditionalKeys(query[0], ['name', 'capacity', 'color', 'id', 'user', 'date']))
+        expect(haveNoAdditionalKeys(query[0], ['name', 'capacity', 'color', 'id', 'user', 'date']));
     });
 
     it('should not include additional properties in creating records', async () => {

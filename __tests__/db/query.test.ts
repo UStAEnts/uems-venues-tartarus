@@ -4,24 +4,24 @@
 // query by substring works
 // query by invalid id returns no result
 
-import { Db, MongoClient, ObjectId } from "mongodb";
+import { Db, MongoClient, ObjectId } from 'mongodb';
+import { BaseSchema } from '@uems/uemscommlib';
 import {
     defaultAfterAll,
     defaultAfterEach,
     defaultBeforeAll,
     defaultBeforeEach,
     haveNoAdditionalKeys
-} from "../utilities/setup";
-import { BaseSchema } from "@uems/uemscommlib/build/BaseSchema";
+} from '../utilities/setup';
+import { Database } from '../../src/database/Database';
 import Intentions = BaseSchema.Intentions;
-import { Database } from "../../src/database/Database";
 
 const empty = <T extends Intentions>(intention: T): { msg_intention: T, msg_id: 0, status: 0, userID: string } => ({
     msg_intention: intention,
     msg_id: 0,
     status: 0,
     userID: 'user',
-})
+});
 
 describe('delete messages of states', () => {
     let client!: MongoClient;
@@ -40,14 +40,14 @@ describe('delete messages of states', () => {
         capacity: 1000,
         color: '#aaaaaa',
         user: 'something',
-        date: Date.now()
+        date: Date.now(),
     }, {
         _id: new ObjectId('56d9bf92f9be48771d6fe5b4'),
         name: 'name other one',
         capacity: 1000,
         color: '#aaaaaa',
         user: 'something',
-        date: Date.now()
+        date: Date.now(),
     }], client, db));
 
     afterEach(() => defaultAfterEach(client, db));
@@ -56,7 +56,7 @@ describe('delete messages of states', () => {
 
     beforeAll(() => {
         venueDB = new Database({ client, database: 'testing', collection: 'details' });
-    })
+    });
 
     it('should return return all when query is empty', async () => {
         const query = await venueDB.query({ ...empty('READ') });

@@ -1,6 +1,6 @@
 /* eslint-disable */
 import winston from "winston";
-import { has } from "@uems/uemscommlib/build/utilities/ObjectUtilities";
+import { has } from "@uems/uemscommlib";
 import { Writable } from "stream";
 
 /**

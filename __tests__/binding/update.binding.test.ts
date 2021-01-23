@@ -1,17 +1,17 @@
-import { Db, MongoClient, ObjectId } from "mongodb";
-import { defaultAfterAll, defaultAfterEach, defaultBeforeAll, defaultBeforeEach } from "../utilities/setup";
-import { BindingBroker } from "../utilities/BindingBroker";
-import { BaseSchema } from "@uems/uemscommlib/build/BaseSchema";
+import { Db, MongoClient, ObjectId } from 'mongodb';
+import { BaseSchema, MsgStatus, VenueMessage } from '@uems/uemscommlib';
+import { defaultAfterAll, defaultAfterEach, defaultBeforeAll, defaultBeforeEach } from '../utilities/setup';
+import { BindingBroker } from '../utilities/BindingBroker';
+
+import { RabbitNetworkHandler } from '../../src/networking/Messaging';
+import { Database } from '../../src/database/Database';
+import bind from '../../src/binding/VenueDatabaseBinding';
 import Intentions = BaseSchema.Intentions;
-import { EntStateMessage, MsgStatus, StateMessage, TopicMessage, VenueMessage } from "@uems/uemscommlib";
 
 import DeleteVenueMessage = VenueMessage.DeleteVenueMessage;
 import UpdateVenueMessage = VenueMessage.UpdateVenueMessage;
 import ReadVenueMessage = VenueMessage.ReadVenueMessage;
 import CreateVenueMessage = VenueMessage.CreateVenueMessage;
-import { RabbitNetworkHandler } from "../../src/networking/Messaging";
-import { Database } from "../../src/database/Database";
-import bind from "../../src/binding/VenueDatabaseBinding";
 // updating normal works
 // updating duplicate fails
 
@@ -20,7 +20,7 @@ const empty = <T extends Intentions>(intention: T): { msg_intention: T, msg_id: 
     msg_id: 0,
     status: 0,
     userID: 'user',
-})
+});
 
 describe('create messages of states', () => {
     let client!: MongoClient;
@@ -60,7 +60,7 @@ describe('create messages of states', () => {
             color: '#aaaaaa',
             user: 'something',
             date: DATE,
-        }], client, db)
+        }], client, db);
     });
     afterEach(() => defaultAfterEach(client, db));
 
