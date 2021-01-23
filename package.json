@@ -5,6 +5,7 @@
   "main": "build/index.js",
   "scripts": {
     "test": "jest",
+    "start": "node build/index.js",
     "run": "npm run build && node build/index.js",
     "run:debug": "ts-node src/index.ts",
     "build": "tsc --listEmittedFiles",

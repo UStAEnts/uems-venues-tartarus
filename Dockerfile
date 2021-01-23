@@ -1,33 +1,27 @@
 FROM node:current-alpine AS compile
 
-WORKDIR /usr/app
+# Setup where to store the app
+WORKDIR /user/app
 
-# Copy in package.json and install all dependencies including development dependencies
-COPY package.json .
-RUN npm install
+# Normally we want to run the cached built one
+CMD ["npm", "run", "start"]
 
-# Copy in all the source files and build the typescript project
-ADD . /usr/app
-RUN npm run tsc
+# Copy in package.json file and package-lock.json if its present
+# This means that everything will be redone if the dependencies change
+# (but also if you add new scripts and stuff)
+COPY package*.json ./
 
-# Now we want to remove the source and the node modules by creating a new stage of the build
-FROM node:current-alpine
-
-# Create the production work directory
-WORKDIR /usr/app/prod
-
-# Make sure we are executing in production here
+# Mark this as a development image which will enable more in-depth logging and
+# stuff like that
 ENV NODE_ENV=dev
 
-# Copy in package.json and install only production dependencies
-COPY --from=0 /usr/app/package.json .
-RUN npm install --production 
+# Install the dependencies! This will be the longest step
+RUN npm install
 
-# Finally copy in the built files
-COPY --from=compile /usr/app/build .
+# Copy in the source files to the root of the project. These will be filtered by
+# .dockerignore
+COPY . .
 
-# Then copy in the currently loaded configuration
-COPY config/configuration.json /usr/app/config/
-
-# Finally set the command to execute
-CMD ["node", "index.js"]
+# As we are running 'start' this relies on the built version of the project, so build it
+# (if it is present)
+RUN npm run build --if-present
