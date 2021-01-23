@@ -1,0 +1,29 @@
+{
+  "message": {
+    "gateway": "gateway",
+    "request": "request",
+    "inbox": "tartarus_inbox",
+    "topics": [
+      "venues.details.*"
+    ],
+    "options": {
+      "hostname": "rabbit-uems",
+      "port": 5672,
+      "username": "rdadmin",
+      "password": "5PeztA2*^wGETm8qce*9"
+    }
+  },
+  "database": {
+    "username": "root",
+    "password": "example",
+    "uri": "mongo",
+    "port": 27017,
+    "server": "venue-details",
+    "database": "venues",
+    "collection": "details",
+    "settings": {
+      "authMechanism": "SCRAM-SHA-1",
+      "authSource": "admin"
+    }
+  }
+}
