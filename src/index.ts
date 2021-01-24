@@ -20,7 +20,8 @@ let messager: RabbitNetworkHandler | undefined;
 let database: Database | undefined;
 let configuration: z.infer<typeof ConfigurationSchema> | undefined;
 
-fs.readFile(path.join(__dirname, '..', 'config', 'configuration.json'), { encoding: 'utf8' })
+// This file will be '/build/src/index.js' and so up two levels to / and down into config
+fs.readFile(path.join(__dirname, '..', '..', 'config', 'configuration.json'), { encoding: 'utf8' })
     .then((file) => {
         __.debug('loaded configuration file');
 
