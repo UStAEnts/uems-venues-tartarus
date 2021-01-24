@@ -4,12 +4,11 @@
   "description": "Venues microservice for the UEMS system",
   "main": "build/index.js",
   "scripts": {
-    "test": "jest",
-    "start": "node build/src/index.js",
-    "run": "npm run build && node build/src/index.js",
-    "run:debug": "ts-node src/index.ts",
-    "build": "tsc --listEmittedFiles",
-    "tsc": "npm run build"
+    "clean": "rm -r build/ || true",
+    "test": "jest --runInBand",
+    "start": "node -r source-map-support/register --trace-warnings build/src/index.js",
+    "start:dev": "ts-node --files src/index.ts",
+    "build": "tsc --listEmittedFiles"
   },
   "repository": {
     "type": "git",
