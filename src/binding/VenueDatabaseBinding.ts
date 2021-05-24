@@ -3,9 +3,28 @@ import { MsgStatus, VenueMessage, VenueResponse } from '@uems/uemscommlib';
 import { VenueDatabase } from '../database/Database';
 import { RabbitNetworkHandler } from '../networking/Messaging';
 import { _ml } from '../logging/Log';
-import { ClientFacingError } from "@uems/micro-builder/build/errors/ClientFacingError";
+import { ClientFacingError } from "@uems/micro-builder/build/src/errors/ClientFacingError";
+import { tryApplyTrait } from "@uems/micro-builder/build/src";
 
 const _b = _ml(__filename, 'binding');
+
+/**
+ * Tracks the latest 50 requests in the system and provides a utility save function which will limit the length of the
+ * array to 50 and automatically apply traits to the healthcheck system
+ */
+// @ts-ignore
+const requestTracker: ('success' | 'fail')[] & { save: (d: 'success' | 'fail') => void } = [];
+/**
+ * Saves the result of a request through and will remove the earliest entry from the array if th count is greater than
+ * or equal to 50.
+ * @param d the state of the request, this is a general status, not specific
+ */
+requestTracker.save = function save(d) {
+    if (requestTracker.length >= 50) requestTracker.shift();
+    requestTracker.push(d);
+    tryApplyTrait('successful', requestTracker.filter((e) => e === 'success').length);
+    tryApplyTrait('fail', requestTracker.filter((e) => e === 'fail').length);
+};
 
 async function execute(
     message: VenueMessage.VenueMessage,
@@ -14,6 +33,7 @@ async function execute(
 ) {
     if (!database) {
         _b.warn('query was received without a valid database connection');
+        requestTracker.save('fail');
         throw new Error('uninitialised database connection');
     }
 
@@ -45,6 +65,7 @@ async function execute(
         _b.error('failed to query database for events', {
             error: e as unknown,
         });
+        requestTracker.save('fail');
 
         if (e instanceof ClientFacingError) {
             send({
@@ -83,6 +104,7 @@ async function execute(
             userID: message.userID,
         });
     }
+    requestTracker.save(status === constants.HTTP_STATUS_NOT_IMPLEMENTED ? 'fail' : 'success');
 }
 
 export default function bind(database: VenueDatabase, broker: RabbitNetworkHandler): void {

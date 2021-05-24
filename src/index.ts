@@ -1,6 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 import * as z from 'zod';
+import { has } from '@uems/uemscommlib';
+import { launchCheck, tryApplyTrait } from '@uems/micro-builder/build/src';
 import { _ml } from './logging/Log';
 import { MessagingConfigurationSchema, RabbitNetworkHandler } from './networking/Messaging';
 import { Database, MongoDBConfigurationSchema } from './database/Database';
@@ -10,6 +12,20 @@ const __ = _ml(__filename);
 const _b = _ml(`${__filename} | bind`);
 
 __.info('starting tartarus...');
+
+void launchCheck(['successful', 'errored', 'rabbitmq', 'database', 'config'], (traits: Record<string, any>) => {
+    if (has(traits, 'rabbitmq') && traits.rabbitmq !== '_undefined' && !traits.rabbitmq) return 'unhealthy';
+    if (has(traits, 'database') && traits.database !== '_undefined' && !traits.database) return 'unhealthy';
+    if (has(traits, 'config') && traits.config !== '_undefined' && !traits.config) return 'unhealthy';
+
+    // If 75% of results fail then we return false
+    if (has(traits, 'successful') && has(traits, 'errored')) {
+        const errorPercentage = traits.errored / (traits.successful + traits.errored);
+        if (errorPercentage > 0.05) return 'unhealthy-serving';
+    }
+
+    return 'healthy';
+});
 
 const ConfigurationSchema = z.object({
     message: MessagingConfigurationSchema,
@@ -30,9 +46,11 @@ fs.readFile(path.join(__dirname, '..', '..', 'config', 'configuration.json'), { 
     .then(() => (new Promise<Database>((resolve, reject) => {
         if (!configuration) {
             __.error('reached an uninitialised configuration, this should not be possible');
+            tryApplyTrait('config', false);
             reject(new Error('uninitialised configuration'));
             return;
         }
+        tryApplyTrait('config', true);
 
         __.info('setting up database connection');
 
@@ -42,12 +60,14 @@ fs.readFile(path.join(__dirname, '..', '..', 'config', 'configuration.json'), { 
             __.error('failed to setup the database connection', {
                 error: err,
             });
+            tryApplyTrait('database', false);
 
             reject(err);
         });
 
         database.once('ready', () => {
             __.info('database connection enabled');
+            tryApplyTrait('database', true);
             // Make sure we dont later try and reject a resolved promise from an unrelated error
             unbind();
             resolve(database);
@@ -57,6 +77,7 @@ fs.readFile(path.join(__dirname, '..', '..', 'config', 'configuration.json'), { 
         if (!configuration) {
             __.error('reached an uninitialised configuration, this should not be possible');
             reject(new Error('uninitialised configuration'));
+            tryApplyTrait('database', false);
             return;
         }
 
@@ -68,12 +89,14 @@ fs.readFile(path.join(__dirname, '..', '..', 'config', 'configuration.json'), { 
             __.error('failed to setup the message broker', {
                 error: err,
             });
+            tryApplyTrait('rabbitmq', false);
 
             reject(err);
         });
 
         messager.once('ready', () => {
             __.info('message broker enabled');
+            tryApplyTrait('rabbitmq', true);
             // Make sure we dont later try and reject a resolved promise from an unrelated error
             unbind();
             resolve();
@@ -82,6 +105,8 @@ fs.readFile(path.join(__dirname, '..', '..', 'config', 'configuration.json'), { 
     .then(() => {
         if (!messager || !database) {
             __.error('reached an uninitialised database or messenger, this should not be possible');
+            tryApplyTrait('rabbitmq', false);
+            tryApplyTrait('database', false);
             throw new Error('uninitialised database or messenger');
         }
 

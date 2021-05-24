@@ -7,8 +7,8 @@ import {
     genericDelete,
     genericEntityConversion,
     genericUpdate
-} from '@uems/micro-builder/build/utility/GenericDatabaseFunctions';
-import { ClientFacingError } from '@uems/micro-builder/build/errors/ClientFacingError';
+} from '@uems/micro-builder/build/src/utility/GenericDatabaseFunctions';
+import { ClientFacingError } from '@uems/micro-builder/build/src/errors/ClientFacingError';
 import { _ml } from '../logging/Log';
 import InternalVenue = VenueResponse.InternalVenue;
 import CreateVenueMessage = VenueMessage.CreateVenueMessage;
