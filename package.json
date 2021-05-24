@@ -37,9 +37,9 @@
     "typescript": "^3.9.7"
   },
   "dependencies": {
-    "@uems/micro-builder": "0.0.12",
+    "@uems/micro-builder": "^1.0.1",
     "@uems/uemscommlib": "0.1.0-beta.38",
-    "amqplib": "^0.6.0",
+    "amqplib": "^0.8.0",
     "colors": "^1.4.0",
     "mongo-unit": "^2.0.1",
     "mongodb": "^3.6.0",
