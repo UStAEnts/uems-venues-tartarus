@@ -8,7 +8,8 @@
     "test": "jest --runInBand",
     "start": "node -r source-map-support/register --trace-warnings build/src/index.js",
     "start:dev": "ts-node --files src/index.ts",
-    "build": "tsc --listEmittedFiles"
+    "build": "tsc --listEmittedFiles",
+    "dockerless": "UEMS_HEALTHCHECK=7776 NODE_ENV=dev UEMS_TARTARUS_CONFIG_LOCATION=config/configuration.json npm run start:dev"
   },
   "repository": {
     "type": "git",
@@ -37,7 +38,7 @@
     "typescript": "^3.9.7"
   },
   "dependencies": {
-    "@uems/micro-builder": "^1.0.1",
+    "@uems/micro-builder": "^1.0.3",
     "@uems/uemscommlib": "0.1.0-beta.38",
     "amqplib": "^0.8.0",
     "colors": "^1.4.0",
