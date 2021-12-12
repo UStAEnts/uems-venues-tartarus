@@ -3,7 +3,7 @@ import CreateUserMessage = UserMessage.CreateUserMessage;
 import UpdateUserMessage = UserMessage.UpdateUserMessage;
 import DeleteUserMessage = UserMessage.DeleteUserMessage;
 import ReadUserMessage = UserMessage.ReadUserMessage;
-import { RabbitNetworkHandler } from "../../src/networking/Messaging";
+import { VenueRabbitNetworkHandler } from "../../src";
 
 interface MockBrokerInterface<R, D, U, C, M> {
     on(name: 'query', callback: (message: R, send: (data: any) => void) => void, routingKey: string): void;
@@ -67,4 +67,4 @@ export class BindingBroker<R, D, U, C, M> implements MockBrokerInterface<R, D, U
 
 }
 
-export const makeBindingBroker = () => new BindingBroker() as unknown as RabbitNetworkHandler;
+export const makeBindingBroker = () => new BindingBroker() as unknown as VenueRabbitNetworkHandler;

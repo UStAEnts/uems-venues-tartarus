@@ -3,7 +3,7 @@ import { BaseSchema, MsgStatus, VenueMessage } from '@uems/uemscommlib';
 import { defaultAfterAll, defaultAfterEach, defaultBeforeAll, defaultBeforeEach } from '../utilities/setup';
 import { BindingBroker } from '../utilities/BindingBroker';
 
-import { RabbitNetworkHandler } from '../../src/networking/Messaging';
+import { RabbitNetworkHandler } from '@uems/micro-builder/build/src/messaging/GenericRabbitNetworkHandler';
 import { Database } from '../../src/database/Database';
 import bind from '../../src/binding/VenueDatabaseBinding';
 import Intentions = BaseSchema.Intentions;
@@ -11,6 +11,7 @@ import ReadVenueMessage = VenueMessage.ReadVenueMessage;
 import DeleteVenueMessage = VenueMessage.DeleteVenueMessage;
 import UpdateVenueMessage = VenueMessage.UpdateVenueMessage;
 import CreateVenueMessage = VenueMessage.CreateVenueMessage;
+import { VenueRabbitNetworkHandler } from "../../src";
 // creating normal works
 // creating duplicate fails
 // undefined db fails successfully
@@ -28,7 +29,7 @@ describe('create messages of states', () => {
     let venueDB!: Database;
 
     let broker!: BindingBroker<ReadVenueMessage, DeleteVenueMessage, UpdateVenueMessage, CreateVenueMessage, VenueMessage.VenueMessage>;
-    let fakeBroker!: RabbitNetworkHandler;
+    let fakeBroker!: VenueRabbitNetworkHandler;
 
     beforeAll(async () => {
         const { client: newClient, db: newDb } = await defaultBeforeAll();
@@ -36,7 +37,7 @@ describe('create messages of states', () => {
         db = newDb;
 
         broker = new BindingBroker();
-        fakeBroker = broker as unknown as RabbitNetworkHandler;
+        fakeBroker = broker as unknown as VenueRabbitNetworkHandler;
 
         venueDB = new Database({ client, collection: 'details', database: 'testing' });
     });

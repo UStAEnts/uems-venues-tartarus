@@ -1,10 +1,10 @@
 import { constants } from 'http2';
 import { MsgStatus, VenueMessage, VenueResponse } from '@uems/uemscommlib';
 import { VenueDatabase } from '../database/Database';
-import { RabbitNetworkHandler } from '../networking/Messaging';
 import { _ml } from '../logging/Log';
 import { ClientFacingError } from "@uems/micro-builder/build/src/errors/ClientFacingError";
 import { tryApplyTrait } from "@uems/micro-builder/build/src";
+import { VenueRabbitNetworkHandler } from "../index";
 
 const _b = _ml(__filename, 'binding');
 
@@ -107,7 +107,7 @@ async function execute(
     requestTracker.save(status === constants.HTTP_STATUS_NOT_IMPLEMENTED ? 'fail' : 'success');
 }
 
-export default function bind(database: VenueDatabase, broker: RabbitNetworkHandler): void {
+export default function bind(database: VenueDatabase, broker: VenueRabbitNetworkHandler): void {
     broker.on('query', (message, send) => execute(message, database, send));
     _b.debug('bound [query] event');
 

@@ -1,9 +1,9 @@
-import { Connection, MessageFields, MessageProperties, Options, Replies } from "amqplib";
-import { ConsumeMessage, GetMessage, Message } from "amqplib/properties";
-import { EventEmitter } from "events";
+import { Connection, MessageFields, MessageProperties, Options, Replies } from 'amqplib';
+import { ConsumeMessage } from 'amqplib/properties';
+import { EventEmitter } from 'events';
+import { ConnectFunction } from '@uems/micro-builder/build/src';
 import Consume = Replies.Consume;
 import Publish = Options.Publish;
-import { ConnectFunction } from "../../src/networking/Messaging";
 
 export function createTest() {
     const connection = new MessagingConnection();

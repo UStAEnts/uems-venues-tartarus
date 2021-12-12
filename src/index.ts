@@ -1,12 +1,19 @@
 import fs from 'fs/promises';
 import path from 'path';
 import * as z from 'zod';
-import { has } from '@uems/uemscommlib';
 import { launchCheck, tryApplyTrait } from '@uems/micro-builder/build/src';
+import { RabbitNetworkHandler } from '@uems/micro-builder/build/src/messaging/GenericRabbitNetworkHandler';
 import { _ml } from './logging/Log';
-import { MessagingConfigurationSchema, RabbitNetworkHandler } from './networking/Messaging';
 import { Database, MongoDBConfigurationSchema } from './database/Database';
 import bind from './binding/VenueDatabaseBinding';
+import {
+    has,
+    VenueMessage as VM,
+    VenueMessageValidator,
+    VenueResponse as VR,
+    VenueResponseValidator,
+} from '@uems/uemscommlib';
+import { MessagingConfigurationSchema } from './networking/Messaging';
 
 const __ = _ml(__filename);
 const _b = _ml(`${__filename} | bind`);
@@ -32,7 +39,9 @@ const ConfigurationSchema = z.object({
     database: MongoDBConfigurationSchema,
 });
 
-let messager: RabbitNetworkHandler | undefined;
+export type VenueRabbitNetworkHandler = RabbitNetworkHandler<VM.VenueMessage, VM.CreateVenueMessage, VM.DeleteVenueMessage, VM.ReadVenueMessage, VM.UpdateVenueMessage, VR.VenueResponseMessage | VR.VenueReadResponseMessage>;
+
+let messager: VenueRabbitNetworkHandler | undefined;
 let database: Database | undefined;
 let configuration: z.infer<typeof ConfigurationSchema> | undefined;
 
@@ -83,7 +92,14 @@ fs.readFile(process.env.UEMS_TARTARUS_CONFIG_LOCATION ?? path.join(__dirname, '.
 
         __.info('setting up the message broker');
 
-        messager = new RabbitNetworkHandler(configuration.message);
+        const incoming = new VenueMessageValidator();
+        const outgoing = new VenueResponseValidator();
+
+        messager = new RabbitNetworkHandler(
+            configuration.message,
+            (data: any) => incoming.validate(data),
+            (data: any) => outgoing.validate(data),
+        );
 
         const unbind = messager.once('error', (err) => {
             __.error('failed to setup the message broker', {

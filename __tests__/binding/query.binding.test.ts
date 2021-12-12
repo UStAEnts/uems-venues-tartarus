@@ -3,7 +3,6 @@ import { BaseSchema, MsgStatus, VenueMessage } from '@uems/uemscommlib';
 import { defaultAfterAll, defaultAfterEach, defaultBeforeAll, defaultBeforeEach } from '../utilities/setup';
 import { BindingBroker } from '../utilities/BindingBroker';
 
-import { RabbitNetworkHandler } from '../../src/networking/Messaging';
 import { Database } from '../../src/database/Database';
 import bind from '../../src/binding/VenueDatabaseBinding';
 import Intentions = BaseSchema.Intentions;
@@ -11,6 +10,7 @@ import DeleteVenueMessage = VenueMessage.DeleteVenueMessage;
 import UpdateVenueMessage = VenueMessage.UpdateVenueMessage;
 import ReadVenueMessage = VenueMessage.ReadVenueMessage;
 import CreateVenueMessage = VenueMessage.CreateVenueMessage;
+import { VenueRabbitNetworkHandler } from '../../src';
 
 const empty = <T extends Intentions>(intention: T): { msg_intention: T, msg_id: 0, status: 0, userID: string } => ({
     msg_intention: intention,
@@ -27,7 +27,7 @@ describe('query binding messages', () => {
     let db!: Db;
 
     let broker!: BindingBroker<ReadVenueMessage, DeleteVenueMessage, UpdateVenueMessage, CreateVenueMessage, VenueMessage.VenueMessage>;
-    let fakeBroker!: RabbitNetworkHandler;
+    let fakeBroker!: VenueRabbitNetworkHandler;
 
     let venueDB!: Database;
     const DATE = Date.now();
@@ -38,7 +38,7 @@ describe('query binding messages', () => {
         db = newDb;
 
         broker = new BindingBroker();
-        fakeBroker = broker as unknown as RabbitNetworkHandler;
+        fakeBroker = broker as unknown as VenueRabbitNetworkHandler;
 
         venueDB = new Database({ client, database: 'testing', collection: 'details' });
     });
