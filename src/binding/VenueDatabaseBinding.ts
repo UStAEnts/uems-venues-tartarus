@@ -1,5 +1,5 @@
 import { constants } from 'http2';
-import { MsgStatus, VenueMessage, VenueResponse } from '@uems/uemscommlib';
+import { DiscoveryMessage, DiscoveryResponse, MsgStatus, VenueMessage, VenueResponse } from '@uems/uemscommlib';
 import { VenueDatabase } from '../database/Database';
 import { _ml } from '../logging/Log';
 import { ClientFacingError } from "@uems/micro-builder/build/src/errors/ClientFacingError";
@@ -25,6 +25,75 @@ requestTracker.save = function save(d) {
     tryApplyTrait('successful', requestTracker.filter((e) => e === 'success').length);
     tryApplyTrait('fail', requestTracker.filter((e) => e === 'fail').length);
 };
+
+async function discover(
+    message: DiscoveryMessage.DiscoverMessage,
+    database: VenueDatabase,
+    send: (res: DiscoveryResponse.DiscoveryDeleteResponse) => void,
+) {
+    const result: DiscoveryResponse.DiscoverResponse = {
+        userID: message.userID,
+        status: MsgStatus.SUCCESS,
+        msg_id: message.msg_id,
+        msg_intention: 'READ',
+        restrict: 0,
+        modify: 0,
+    };
+
+    if (message.assetType === 'user') {
+        result.restrict = (await database.query({
+            msg_id: message.msg_id,
+            msg_intention: 'READ',
+            status: 0,
+            userID: message.assetID,
+        })).length;
+    }
+
+    if (message.assetType === 'venue') {
+        result.modify = (await database.query({
+            msg_id: message.msg_id,
+            msg_intention: 'READ',
+            status: 0,
+            userID: message.userID,
+            id: message.assetID,
+        })).length;
+    }
+
+    send(result);
+}
+
+async function removeDiscover(
+    message: DiscoveryMessage.DeleteMessage,
+    database: VenueDatabase,
+    send: (res: DiscoveryResponse.DiscoveryDeleteResponse) => void,
+) {
+    const result: DiscoveryResponse.DeleteResponse = {
+        userID: message.userID,
+        status: MsgStatus.SUCCESS,
+        msg_id: message.msg_id,
+        msg_intention: 'DELETE',
+        restrict: 0,
+        modified: 0,
+        successful: false,
+    };
+
+    if (message.assetType === 'venue') {
+        try {
+            result.modified = (await database.delete({
+                msg_id: message.msg_id,
+                msg_intention: 'DELETE',
+                status: 0,
+                userID: 'anonymous',
+                id: message.assetID,
+            })).length;
+            result.successful = true;
+        } catch (e) {
+            result.successful = false;
+        }
+    }
+
+    send({ ...result, successful: true });
+}
 
 async function execute(
     message: VenueMessage.VenueMessage,
@@ -108,7 +177,11 @@ async function execute(
 }
 
 export default function bind(database: VenueDatabase, broker: VenueRabbitNetworkHandler): void {
-    broker.on('query', (message, send) => execute(message, database, send));
+    broker.on('query', async (message, send, routingKey) => {
+        if (routingKey.endsWith('.discover')) await discover(message as DiscoveryMessage.DiscoverMessage, database, send);
+        else if (routingKey.endsWith('.delete')) await removeDiscover(message as DiscoveryMessage.DeleteMessage, database, send);
+        else await execute(message, database, send);
+    });
     _b.debug('bound [query] event');
 
     broker.on('delete', (message, send) => execute(message, database, send));
