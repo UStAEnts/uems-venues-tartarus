@@ -7,6 +7,8 @@ import { _ml } from './logging/Log';
 import { Database, MongoDBConfigurationSchema } from './database/Database';
 import bind from './binding/VenueDatabaseBinding';
 import {
+    DiscoveryMessage, DiscoveryResponse,
+    DiscoveryResponseValidator, DiscoveryMessageValidator,
     has,
     VenueMessage as VM,
     VenueMessageValidator,
@@ -39,7 +41,13 @@ const ConfigurationSchema = z.object({
     database: MongoDBConfigurationSchema,
 });
 
-export type VenueRabbitNetworkHandler = RabbitNetworkHandler<VM.VenueMessage, VM.CreateVenueMessage, VM.DeleteVenueMessage, VM.ReadVenueMessage, VM.UpdateVenueMessage, VR.VenueResponseMessage | VR.VenueReadResponseMessage>;
+export type VenueRabbitNetworkHandler = RabbitNetworkHandler<VM.VenueMessage | DiscoveryMessage.DiscoveryDeleteMessage,
+    VM.CreateVenueMessage,
+    VM.DeleteVenueMessage,
+    VM.ReadVenueMessage | DiscoveryMessage.DiscoveryDeleteMessage,
+    VM.UpdateVenueMessage,
+// @ts-ignore
+    VR.VenueResponseMessage | VR.VenueReadResponseMessage | DiscoveryResponse.DiscoveryDeleteResponse>;
 
 let messager: VenueRabbitNetworkHandler | undefined;
 let database: Database | undefined;
@@ -94,11 +102,28 @@ fs.readFile(process.env.UEMS_TARTARUS_CONFIG_LOCATION ?? path.join(__dirname, '.
 
         const incoming = new VenueMessageValidator();
         const outgoing = new VenueResponseValidator();
+        const discoveryIncoming = new DiscoveryMessageValidator();
+        const discoveryOutgoing = new DiscoveryResponseValidator();
 
         messager = new RabbitNetworkHandler(
             configuration.message,
-            (data: any) => incoming.validate(data),
-            (data: any) => outgoing.validate(data),
+            async (data: any) => {
+                console.log('in', data);
+                try {
+                    const r = await incoming.validate(data);
+                    if (r) return r;
+                } catch (e) {
+                }
+                return await discoveryIncoming.validate(data);
+            },
+            async (data: any) => {
+                try {
+                    const r = await outgoing.validate(data);
+                    if (r) return r;
+                } catch (e) {
+                }
+                return await discoveryOutgoing.validate(data);
+            },
         );
 
         const unbind = messager.once('error', (err) => {
