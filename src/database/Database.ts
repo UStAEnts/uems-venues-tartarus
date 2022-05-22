@@ -164,7 +164,7 @@ export class Database implements VenueDatabase {
             if (!this._database) throw new Error('ready was thrown when it wasn\'t ready');
             void this._database.collection(this._configuration.collection).createIndex(
                 { name: 'text' },
-                { unique: true },
+                //{ unique: true },
             );
         });
 
@@ -204,8 +204,15 @@ export class Database implements VenueDatabase {
 
         const find: FilterQuery<InDatabaseVenue> = {};
 
+        // TODO: error handling and better typing
         if (query.id) {
-            find._id = new ObjectId(query.id);
+            if (typeof (query.id) === 'string') {
+                find._id = new ObjectId(query.id);
+            } else {
+                find._id = {
+                    $in: query.id.map((e) => new ObjectId(e)),
+                };
+            }
         }
 
         if (query.name) {
