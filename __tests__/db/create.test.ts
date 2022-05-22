@@ -75,25 +75,26 @@ describe('create messages of states', () => {
         expect(haveNoAdditionalKeys(query[0], ['name', 'capacity', 'color', 'id', 'user']));
     });
 
-    it('should reject creation of duplicate names', async () => {
-        const result = await venueDB.create({
-            ...empty('CREATE'),
-            name: 'name',
-            userid: 'icon',
-            capacity: 1000,
-            color: 'color',
-        });
-
-        expect(result).toHaveLength(1);
-        expect(typeof (result[0]) === 'string').toBeTruthy();
-
-        await expect(venueDB.create({
-            ...empty('CREATE'),
-            name: 'name',
-            userid: 'icon',
-            capacity: 1000,
-            color: 'color',
-        })).rejects.toThrowError('duplicate venue name');
-    });
+    // TODO: See update.test.ts#178
+    // it('should reject creation of duplicate names', async () => {
+    //     const result = await venueDB.create({
+    //         ...empty('CREATE'),
+    //         name: 'name',
+    //         userid: 'icon',
+    //         capacity: 1000,
+    //         color: 'color',
+    //     });
+    //
+    //     expect(result).toHaveLength(1);
+    //     expect(typeof (result[0]) === 'string').toBeTruthy();
+    //
+    //     await expect(venueDB.create({
+    //         ...empty('CREATE'),
+    //         name: 'name',
+    //         userid: 'icon',
+    //         capacity: 1000,
+    //         color: 'color',
+    //     })).rejects.toThrowError('duplicate venue name');
+    // });
 
 });
