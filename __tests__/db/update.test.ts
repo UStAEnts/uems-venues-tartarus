@@ -175,33 +175,38 @@ describe('delete messages of states', () => {
         });
     });
 
-    it('should not allow updating to existing names', async () => {
-        await expect(venueDB.update({
-            ...empty('UPDATE'),
-            id: '56d9bf92f9be48771d6fe5b2',
-            name: 'name other',
-        })).rejects.toThrowError('cannot update to existing venue name');
-
-        const query = await venueDB.query({ ...empty('READ') });
-        expect(query).toHaveLength(2);
-        let find = query.find((e) => e.id === '56d9bf92f9be48771d6fe5b2');
-        expect(find).not.toBeUndefined();
-        expect(find).toEqual({
-            id: '56d9bf92f9be48771d6fe5b2',
-            name: 'name',
-            capacity: 1000,
-            color: '#aaaaaa',
-            user: 'something',
-        });
-        find = query.find((e) => e.id === '56d9bf92f9be48771d6fe5b4');
-        expect(find).not.toBeUndefined();
-        expect(find).toEqual({
-            id: '56d9bf92f9be48771d6fe5b4',
-            name: 'name other',
-            capacity: 1000,
-            color: '#aaaaaa',
-            user: 'something',
-        });
-    });
+    // TODO: this test has been disabled because of recent (2022-05-22) changes to the indexes on the venue table
+    //       A full text index with a unique constraint seems to prevent any of the same words appearing in an entry
+    //       which is not ideal for a venue system where there may be similar names. Therefore while this test is ideal
+    //       its no longer represented by the unique index.
+    //
+    // it('should not allow updating to existing names', async () => {
+    //     await expect(venueDB.update({
+    //         ...empty('UPDATE'),
+    //         id: '56d9bf92f9be48771d6fe5b2',
+    //         name: 'name other',
+    //     })).rejects.toThrowError('cannot update to existing venue name');
+    //
+    //     const query = await venueDB.query({ ...empty('READ') });
+    //     expect(query).toHaveLength(2);
+    //     let find = query.find((e) => e.id === '56d9bf92f9be48771d6fe5b2');
+    //     expect(find).not.toBeUndefined();
+    //     expect(find).toEqual({
+    //         id: '56d9bf92f9be48771d6fe5b2',
+    //         name: 'name',
+    //         capacity: 1000,
+    //         color: '#aaaaaa',
+    //         user: 'something',
+    //     });
+    //     find = query.find((e) => e.id === '56d9bf92f9be48771d6fe5b4');
+    //     expect(find).not.toBeUndefined();
+    //     expect(find).toEqual({
+    //         id: '56d9bf92f9be48771d6fe5b4',
+    //         name: 'name other',
+    //         capacity: 1000,
+    //         color: '#aaaaaa',
+    //         user: 'something',
+    //     });
+    // });
 
 });

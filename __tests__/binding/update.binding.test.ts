@@ -94,23 +94,24 @@ describe('create messages of states', () => {
         });
     });
 
-    it('should prevent duplicating entries', async (done) => {
-        const id = '56d9bf92f9be48771d6fe5b2';
-        broker.emit('update', {
-            ...empty('UPDATE'),
-            color: '#aaaaaa',
-            name: 'name other',
-            id,
-        }, 'venues.details.update', (message) => {
-            expect(message).toHaveProperty('result');
-            expect(message).toHaveProperty('status');
-
-            expect(message.status).toEqual(MsgStatus.FAIL);
-            expect(message.result).toHaveLength(1);
-            expect(message.result[0]).toContain('existing');
-
-            done();
-        });
-    });
+    // TODO: See update.test.ts#178
+    // it('should prevent duplicating entries', async (done) => {
+    //     const id = '56d9bf92f9be48771d6fe5b2';
+    //     broker.emit('update', {
+    //         ...empty('UPDATE'),
+    //         color: '#aaaaaa',
+    //         name: 'name other',
+    //         id,
+    //     }, 'venues.details.update', (message) => {
+    //         expect(message).toHaveProperty('result');
+    //         expect(message).toHaveProperty('status');
+    //
+    //         expect(message.status).toEqual(MsgStatus.FAIL);
+    //         expect(message.result).toHaveLength(1);
+    //         expect(message.result[0]).toContain('existing');
+    //
+    //         done();
+    //     });
+    // });
 
 });

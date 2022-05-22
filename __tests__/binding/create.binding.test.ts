@@ -78,38 +78,39 @@ describe('create messages of states', () => {
         });
     });
 
-    it('should prevent creating duplicate entries', async (done) => {
-        broker.emit('create', {
-            ...empty('CREATE'),
-            name: 'name',
-            userid: 'icon',
-            capacity: 1000,
-            color: '#aaaaaa',
-        }, 'venues.details.create', (creation) => {
-            expect(creation).toHaveProperty('result');
-            expect(creation).toHaveProperty('status');
-
-            expect(creation.status).toEqual(MsgStatus.SUCCESS);
-            expect(creation.result).toHaveLength(1);
-
-            broker.emit('create', {
-                ...empty('CREATE'),
-                name: 'name',
-                userid: 'icon',
-                capacity: 1000,
-                color: '#aaaaaa',
-            }, 'venues.details.create', (second) => {
-                expect(second).toHaveProperty('result');
-                expect(second).toHaveProperty('status');
-
-                expect(second.status).toEqual(MsgStatus.FAIL);
-                expect(second.result).toHaveLength(1);
-                expect(second.result[0]).toContain('duplicate');
-
-                done();
-            });
-        });
-    });
+    // TODO: See update.test.ts#178
+    // it('should prevent creating duplicate entries', async (done) => {
+    //     broker.emit('create', {
+    //         ...empty('CREATE'),
+    //         name: 'name',
+    //         userid: 'icon',
+    //         capacity: 1000,
+    //         color: '#aaaaaa',
+    //     }, 'venues.details.create', (creation) => {
+    //         expect(creation).toHaveProperty('result');
+    //         expect(creation).toHaveProperty('status');
+    //
+    //         expect(creation.status).toEqual(MsgStatus.SUCCESS);
+    //         expect(creation.result).toHaveLength(1);
+    //
+    //         broker.emit('create', {
+    //             ...empty('CREATE'),
+    //             name: 'name',
+    //             userid: 'icon',
+    //             capacity: 1000,
+    //             color: '#aaaaaa',
+    //         }, 'venues.details.create', (second) => {
+    //             expect(second).toHaveProperty('result');
+    //             expect(second).toHaveProperty('status');
+    //
+    //             expect(second.status).toEqual(MsgStatus.FAIL);
+    //             expect(second.result).toHaveLength(1);
+    //             expect(second.result[0]).toContain('duplicate');
+    //
+    //             done();
+    //         });
+    //     });
+    // });
 
     it('should fail gracefully if the database is dead', async (done) => {
         const db: Database = new Proxy(venueDB, {
